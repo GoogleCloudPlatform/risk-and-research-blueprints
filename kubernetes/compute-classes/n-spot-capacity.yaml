@@ -1,0 +1,48 @@
+# Copyright 2024 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: cloud.google.com/v1
+kind: ComputeClass
+metadata:
+  name: spot-capacity
+spec:
+  autoscalingPolicy:
+    consolidationDelayMinutes: 2 # Mark a node as eligible for scale down after 1 minute at 10% utilisation
+    consolidationThreshold: 30 # Very low threshold to encourage node packing
+  nodePoolAutoCreation:
+    enabled: true
+  priorities:
+  - machineFamily: "n2"
+    minCores: 4 # Ensure enough CPU for HPC tasks
+    minMemoryGb: 16 # Ensure enough memory for HPC tasks
+    spot: true # Use spot instances for cost savings
+  - machineFamily: "n2d"
+    minCores: 4 # Ensure enough CPU for HPC tasks
+    minMemoryGb: 16 # Ensure enough memory for HPC tasks
+    spot: true # Use spot instances for cost savings
+  - machineFamily: "n1"
+    minCores: 4 # Ensure enough CPU for HPC tasks
+    minMemoryGb: 16 # Ensure enough memory for HPC tasks
+    spot: true # Use spot instances for cost savings
+  - machineFamily: "n4"
+    minCores: 4 # Ensure enough CPU for HPC tasks
+    minMemoryGb: 16 # Ensure enough memory for HPC tasks
+    spot: true # Use spot instances for cost savings
+  - machineFamily: "n2" # Fall back to on demand in case there is no Spot Quota
+    minCores: 4 # Ensure enough CPU for HPC tasks
+    minMemoryGb: 16 # Ensure enough memory for HPC tasks
+    spot: false # Use spot instances for cost savings
+  whenUnsatisfiable: ScaleUpAnyway # Required for Autopilot
+  activeMigration:
+    optimizeRulePriority: false # Prioritize moving workloads to optimal instances

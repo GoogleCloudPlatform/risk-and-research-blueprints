@@ -9,6 +9,11 @@ jobs:
   pre-commit:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-python@v3
-    - uses: pre-commit/action@v3.0.1
+    - name: Checkout code
+      uses: actions/checkout@v3
+    - name: Setup python
+      uses: actions/setup-python@v3
+    - name: Install protoc
+      uses: arduino/setup-protoc@v3
+    - name: Run pre-commit 
+      uses: pre-commit/action@v3.0.1

@@ -1,0 +1,6 @@
+go 1.23
+
+use (
+	./examples/risk/agent/src
+	./examples/risk/loadtest/src
+)

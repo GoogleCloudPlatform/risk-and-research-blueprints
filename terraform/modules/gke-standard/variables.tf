@@ -68,6 +68,11 @@ variable "cluster_name" {
   default     = "gke-risk-research"
 }
 
+variable "cluster_service_account" {
+  type        = string
+  description = "Cluster Service Account"
+}
+
 variable "artifact_registry" {
   type = object({
     project  = string

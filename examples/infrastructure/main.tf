@@ -45,32 +45,38 @@ module "networking" {
 
 # Conditionally create a GKE Standard cluster
 module "gke_standard" {
-  count                = var.gke_standard_enabled ? 1 : 0
-  source               = "../../terraform/modules/gke-standard"
-  project_id           = data.google_project.environment.project_id
-  region               = var.region
-  zones                = var.zones
-  network              = module.networking.network
-  subnet               = module.networking.subnet-1.id
-  ip_range_services    = module.networking.subnet-1.secondary_ip_range[0].range_name
-  ip_range_pods        = module.networking.subnet-1.secondary_ip_range[1].range_name
-  depends_on           = [module.project, module.networking]
-  scaled_control_plane = var.scaled_control_plane
-  artifact_registry    = module.artifact_registry.artifact_registry
+  count                   = var.gke_standard_enabled ? 1 : 0
+  cluster_name            = var.gke_standard_cluster_name
+  source                  = "../../terraform/modules/gke-standard"
+  project_id              = data.google_project.environment.project_id
+  region                  = var.region
+  zones                   = var.zones
+  network                 = module.networking.network
+  subnet                  = module.networking.subnet-1.id
+  ip_range_services       = module.networking.subnet-1.secondary_ip_range[0].range_name
+  ip_range_pods           = module.networking.subnet-1.secondary_ip_range[1].range_name
+  depends_on              = [module.project, module.networking]
+  scaled_control_plane    = var.scaled_control_plane
+  artifact_registry       = module.artifact_registry.artifact_registry
+  cluster_max_cpus        = var.cluster_max_cpus
+  cluster_max_memory      = var.cluster_max_memory
+  cluster_service_account = google_service_account.cluster_service_account
 }
 
 # Conditionall create a GKE Autpilot cluster
 module "gke_autopilot" {
-  count             = var.gke_autopilot_enabled ? 1 : 0
-  source            = "../../terraform/modules/gke-autopilot"
-  project_id        = data.google_project.environment.project_id
-  region            = var.region
-  network           = module.networking.network
-  subnet            = module.networking.subnet-2.id
-  ip_range_services = module.networking.subnet-2.secondary_ip_range[0].range_name
-  ip_range_pods     = module.networking.subnet-2.secondary_ip_range[1].range_name
-  depends_on        = [module.project, module.networking]
-  artifact_registry = module.artifact_registry.artifact_registry
+  count                   = var.gke_autopilot_enabled ? 1 : 0
+  cluster_name            = var.gke_ap_cluster_name
+  source                  = "../../terraform/modules/gke-autopilot"
+  project_id              = data.google_project.environment.project_id
+  region                  = var.region
+  network                 = module.networking.network
+  subnet                  = module.networking.subnet-2.id
+  ip_range_services       = module.networking.subnet-2.secondary_ip_range[0].range_name
+  ip_range_pods           = module.networking.subnet-2.secondary_ip_range[1].range_name
+  depends_on              = [module.project, module.networking]
+  artifact_registry       = module.artifact_registry.artifact_registry
+  cluster_service_account = google_service_account.cluster_service_account
 }
 
 # Create a Parallestore Instance
@@ -87,4 +93,11 @@ module "artifact_registry" {
   source     = "../../terraform/modules/artifact-registry"
   region     = var.region
   project_id = data.google_project.environment.project_id
+}
+
+# Service Account for clusters
+resource "google_service_account" "cluster_service_account" {
+  account_id   = var.cluster_service_account
+  display_name = var.cluster_service_account
+  project      = data.google_project.environment.project_id
 }

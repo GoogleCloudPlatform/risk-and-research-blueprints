@@ -40,7 +40,7 @@ resource "google_container_cluster" "risk-research" {
   }
 
   node_config {
-    service_account = google_service_account.cluster_service_account.email
+    service_account = var.cluster_service_account
     shielded_instance_config {
       enable_secure_boot          = true
       enable_integrity_monitoring = true
@@ -157,9 +157,9 @@ resource "google_container_cluster" "risk-research" {
     dns_cache_config {
       enabled = true
     }
-    # parallelstore_csi_driver_config {
-    #   enabled = true
-    # }
+    parallelstore_csi_driver_config {
+      enabled = true
+    }
   }
 
   cluster_autoscaling {
@@ -236,7 +236,7 @@ resource "google_container_cluster" "risk-research" {
       oauth_scopes = [
         "https://www.googleapis.com/auth/cloud-platform"
       ]
-      service_account = google_service_account.cluster_service_account.email
+      service_account = var.cluster_service_account
     }
   }
   release_channel {
@@ -309,7 +309,7 @@ resource "google_container_node_pool" "primary_ondemand_nodes" {
     }
 
     # Google recommends custom service accounts that have cloud-platform scope and permissions granted via IAM Roles.
-    service_account = google_service_account.cluster_service_account.email
+    service_account = var.cluster_service_account
     oauth_scopes = [
       "https://www.googleapis.com/auth/cloud-platform"
     ]
@@ -371,7 +371,7 @@ resource "google_container_node_pool" "primary_spot_nodes" {
     }
 
     # Google recommends custom service accounts that have cloud-platform scope and permissions granted via IAM Roles.
-    service_account = google_service_account.cluster_service_account.email
+    service_account = var.cluster_service_account
     oauth_scopes = [
       "https://www.googleapis.com/auth/cloud-platform"
     ]
@@ -393,7 +393,7 @@ resource "google_service_account" "cluster_service_account" {
 resource "google_project_iam_member" "monitoring_viewer" {
   project = data.google_project.environment.project_id
   role    = "roles/container.serviceAgent"
-  member  = "serviceAccount:${google_service_account.cluster_service_account.email}"
+  member  = "serviceAccount:${var.cluster_service_account}"
 }
 
 resource "google_artifact_registry_repository_iam_member" "artifactregistry_reader" {
@@ -401,7 +401,7 @@ resource "google_artifact_registry_repository_iam_member" "artifactregistry_read
   location   = var.artifact_registry.location
   repository = var.artifact_registry.name
   role       = "roles/artifactregistry.reader"
-  member     = "serviceAccount:${google_service_account.cluster_service_account.email}"
+  member     = "serviceAccount:${var.cluster_service_account}"
 }
 
 # KMS for Encryption

@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Project Setup
+
 # Project ID where resources will be deployed
 variable "project_id" {
   type        = string
@@ -39,32 +41,7 @@ variable "zones" {
   default     = ["a", "b", "c"]
 }
 
-# Enable/disable Parallelstore deployment (default: false)
-variable "parallelstore_enabled" {
-  type        = bool
-  description = "Enable or disable the deployment of Parallelstore."
-  default     = false
-}
-
-# Enable/disable GKE Standard cluster deployment (default: true)
-variable "gke_standard_enabled" {
-  type        = bool
-  description = "Enable or disable the deployment of a GKE Standard cluster."
-  default     = true
-}
-
-# Enable/disable GKE Autopilot cluster deployment (default: false)
-variable "gke_autopilot_enabled" {
-  type        = bool
-  description = "Enable or disable the deployment of a GKE Autopilot cluster."
-  default     = false
-}
-# Enable/disable initial deployment of a large nodepool for control plane nodes (default: false)
-variable "scaled_control_plane" {
-  type        = bool
-  description = "Deploy a larger initial nodepool to ensure larger control plane nodes are provisied"
-  default     = false
-}
+# Quota
 
 # Request additional quota for a scaled load test run
 variable "additional_quota_enabled" {
@@ -77,4 +54,82 @@ variable "quota_contact_email" {
   description = "Your contact email for the quota request"
   type        = string
   default     = "null"
+}
+
+# GKE Standard
+
+# Enable/disable GKE Standard cluster deployment (default: true)
+variable "gke_standard_enabled" {
+  type        = bool
+  description = "Enable or disable the deployment of a GKE Standard cluster."
+  default     = true
+}
+
+# GKE Standard cluster name
+variable "gke_standard_cluster_name" {
+  type        = string
+  description = "Name of GKE cluster"
+  default     = "gke-risk-research"
+}
+
+# Enable/disable initial deployment of a large nodepool for control plane nodes (default: false)
+variable "scaled_control_plane" {
+  type        = bool
+  description = "Deploy a larger initial nodepool to ensure larger control plane nodes are provisied"
+  default     = false
+}
+
+# Max Cluster CPU's
+variable "cluster_max_cpus" {
+  type        = number
+  default     = 10000
+  description = "Max CPU in cluster autoscaling resource limits"
+}
+
+# Max Cluster Memory
+variable "cluster_max_memory" {
+  type        = number
+  default     = 80000
+  description = "Max memory in cluster autoscaling resource limits"
+}
+
+# GKE Autopilot
+
+# Enable/disable GKE Autopilot cluster deployment (default: false)
+variable "gke_autopilot_enabled" {
+  type        = bool
+  description = "Enable or disable the deployment of a GKE Autopilot cluster."
+  default     = false
+}
+
+# GKE Autopilot cluster name
+variable "gke_ap_cluster_name" {
+  type        = string
+  description = "Name of GKE cluster"
+  default     = "gke-ap-risk-research"
+}
+
+# Parallelstore
+
+# Enable/disable Parallelstore deployment (default: false)
+variable "parallelstore_enabled" {
+  type        = bool
+  description = "Enable or disable the deployment of Parallelstore."
+  default     = false
+}
+
+# Artifact Registry
+
+variable "artifact_registry_name" {
+  description = "Name of the Artifact Registry"
+  type        = string
+  default     = "research-images"
+}
+
+# Identity
+
+variable "cluster_service_account" {
+  description = "Service Account to use for GKE clusters"
+  type        = string
+  default     = "gke-risk-research-cluster-sa"
 }

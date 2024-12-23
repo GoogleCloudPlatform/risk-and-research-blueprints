@@ -142,7 +142,7 @@ repos:
 
 # Linting
 - repo: https://github.com/golangci/golangci-lint
-  rev: v1.61.0
+  rev: v1.62.2
   hooks:
   - id: golangci-lint-full
     args:

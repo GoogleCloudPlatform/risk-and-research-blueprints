@@ -22,7 +22,7 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v5
       with:
-        go-version: '^1.24'
+        go-version: '^1.23'
     - name: Install protoc-gen-go-grpc
       run:  go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.5.1
     - name: Install golangci-lint 

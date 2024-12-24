@@ -59,7 +59,6 @@ variable "artifact_registry" {
 }
 
 variable "cluster_service_account" {
-  type        = string
   description = "Cluster Service Account"
 }
 

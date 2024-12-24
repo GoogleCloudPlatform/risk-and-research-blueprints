@@ -69,7 +69,11 @@ variable "cluster_name" {
 }
 
 variable "cluster_service_account" {
-  description = "Cluster Service Account"
+  description = "The service account for the GKE cluster"
+  type = object({
+    email = string
+    id    = string
+  })
 }
 
 variable "artifact_registry" {

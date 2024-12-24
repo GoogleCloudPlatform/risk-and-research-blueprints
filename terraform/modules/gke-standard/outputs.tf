@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-output "cluster_service_account" {
-  description = "Service Account used by GKE Nodes"
-  value       = google_service_account.cluster_service_account
-}
-
 output "cluster_name" {
   description = "Cluster Name"
   value       = google_container_cluster.risk-research.name

@@ -29,7 +29,7 @@ output "subnet_2" {
 
 output "cluster_service_account" {
   description = "Cluster Service Account"
-  value       = gke_standard.cluster_service_account
+  value       = google_service_account.cluster_service_account
 }
 
 output "artifact_registry" {

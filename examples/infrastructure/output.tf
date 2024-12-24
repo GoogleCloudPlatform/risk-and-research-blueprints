@@ -41,11 +41,13 @@ output "artifact_registry" {
 }
 
 output "parallelstore_instance" {
-  description = "Parallelstore Instance"
-  value = length(module.parallelstore[0].id) > 0 ? {
-    name              = module.parallelstore.name
-    id                = module.parallelstore.id
-    access_points     = module.parallelstore.access_points
-    reserved_ip_range = module.parallelstore.reserved_ip_range
-  } : null
+  value = try(
+    length(module.parallelstore[0].id) > 0 ? {
+      name              = module.parallelstore.name
+      id                = module.parallelstore.id
+      access_points     = module.parallelstore.access_points
+      reserved_ip_range = module.parallelstore.reserved_ip_range
+    } : null,
+    null
+  )
 }

@@ -69,7 +69,6 @@ variable "cluster_name" {
 }
 
 variable "cluster_service_account" {
-  type        = string
   description = "Cluster Service Account"
 }
 

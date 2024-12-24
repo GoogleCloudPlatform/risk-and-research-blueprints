@@ -29,7 +29,7 @@ output "subnet_2" {
 
 output "cluster_service_account" {
   description = "Cluster Service Account"
-  value       = module.gke_standard.cluster_service_account
+  value       = gke_standard.cluster_service_account
 }
 
 output "artifact_registry" {
@@ -42,7 +42,7 @@ output "artifact_registry" {
 
 output "parallelstore_instance" {
   description = "Parallelstore Instance"
-  value = length(module.parallelstore.id) > 0 ? {
+  value = length(module.parallelstore[0].id) > 0 ? {
     name              = module.parallelstore.name
     id                = module.parallelstore.id
     access_points     = module.parallelstore.access_points

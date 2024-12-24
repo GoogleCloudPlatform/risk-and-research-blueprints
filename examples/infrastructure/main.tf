@@ -55,7 +55,7 @@ module "gke_standard" {
   subnet                  = module.networking.subnet-1.id
   ip_range_services       = module.networking.subnet-1.secondary_ip_range[0].range_name
   ip_range_pods           = module.networking.subnet-1.secondary_ip_range[1].range_name
-  depends_on              = [module.project, module.networking]
+  depends_on              = [google_service_account.cluster_service_account, module.project, module.networking]
   scaled_control_plane    = var.scaled_control_plane
   artifact_registry       = module.artifact_registry.artifact_registry
   cluster_max_cpus        = var.cluster_max_cpus
@@ -74,7 +74,7 @@ module "gke_autopilot" {
   subnet                  = module.networking.subnet-2.id
   ip_range_services       = module.networking.subnet-2.secondary_ip_range[0].range_name
   ip_range_pods           = module.networking.subnet-2.secondary_ip_range[1].range_name
-  depends_on              = [module.project, module.networking]
+  depends_on              = [module.project, module.networking, google_service_account.cluster_service_account]
   artifact_registry       = module.artifact_registry.artifact_registry
   cluster_service_account = google_service_account.cluster_service_account
 }

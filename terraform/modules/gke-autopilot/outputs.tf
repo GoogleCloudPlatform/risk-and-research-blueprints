@@ -11,3 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+output "cluster_name" {
+  description = "Cluster Name"
+  value       = google_container_cluster.default.name
+}
+
+output "endpoint" {
+  description = "Cluster Endpoint"
+  value       = google_container_cluster.default.control_plane_endpoints_config[0]
+}

@@ -40,7 +40,7 @@ resource "google_container_cluster" "risk-research" {
   }
 
   node_config {
-    service_account = var.cluster_service_account
+    service_account = var.cluster_service_account.email
     shielded_instance_config {
       enable_secure_boot          = true
       enable_integrity_monitoring = true
@@ -236,7 +236,7 @@ resource "google_container_cluster" "risk-research" {
       oauth_scopes = [
         "https://www.googleapis.com/auth/cloud-platform"
       ]
-      service_account = var.cluster_service_account
+      service_account = var.cluster_service_account.email
     }
   }
   release_channel {
@@ -309,7 +309,7 @@ resource "google_container_node_pool" "primary_ondemand_nodes" {
     }
 
     # Google recommends custom service accounts that have cloud-platform scope and permissions granted via IAM Roles.
-    service_account = var.cluster_service_account
+    service_account = var.cluster_service_account.email
     oauth_scopes = [
       "https://www.googleapis.com/auth/cloud-platform"
     ]
@@ -371,7 +371,7 @@ resource "google_container_node_pool" "primary_spot_nodes" {
     }
 
     # Google recommends custom service accounts that have cloud-platform scope and permissions granted via IAM Roles.
-    service_account = var.cluster_service_account
+    service_account = var.cluster_service_account.email
     oauth_scopes = [
       "https://www.googleapis.com/auth/cloud-platform"
     ]
@@ -384,16 +384,10 @@ resource "google_container_node_pool" "primary_spot_nodes" {
   }
 }
 
-resource "google_service_account" "cluster_service_account" {
-  account_id   = "gke-risk-research-cluster-sa"
-  display_name = "gke-risk-research-cluster-sa"
-  project      = data.google_project.environment.project_id
-}
-
 resource "google_project_iam_member" "monitoring_viewer" {
   project = data.google_project.environment.project_id
   role    = "roles/container.serviceAgent"
-  member  = "serviceAccount:${var.cluster_service_account}"
+  member  = "serviceAccount:${var.cluster_service_account.email}"
 }
 
 resource "google_artifact_registry_repository_iam_member" "artifactregistry_reader" {
@@ -401,7 +395,7 @@ resource "google_artifact_registry_repository_iam_member" "artifactregistry_read
   location   = var.artifact_registry.location
   repository = var.artifact_registry.name
   role       = "roles/artifactregistry.reader"
-  member     = "serviceAccount:${var.cluster_service_account}"
+  member     = "serviceAccount:${var.cluster_service_account.email}"
 }
 
 # KMS for Encryption

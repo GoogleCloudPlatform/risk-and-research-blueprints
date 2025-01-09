@@ -30,7 +30,7 @@ proto-plus==1.25.0
     # via
     #   google-api-core
     #   google-cloud-parallelstore
-protobuf==5.28.3
+protobuf==5.29.3
     # via
     #   google-api-core
     #   google-cloud-parallelstore

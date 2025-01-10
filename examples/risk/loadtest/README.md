@@ -5,10 +5,16 @@
 
 This is a general purpose gRPC load test.
 
-See the details of running the program in its [src/README.md](src/README.md).
+See the details of running the program in its [src/README.md](src/README.md). See below for
+deployment on Google Cloud.
 
 ## Deploy with Terraform
 
+### Deployment with Cloud Shell
+
+The following link will walk you through a quick start in Cloud Shell:
+
+[![Open in Cloud Shell](https://gstatic.com/cloudssh/images/open-btn.svg)](https://shell.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https%3A%2F%2Fgithub.com%2Fgooglecloudplatform%2Frisk-and-research-blueprints&cloudshell_git_branch=examples_fix&cloudshell_workspace=examples%2Frisk%2Floadtest&cloudshell_tutorial=QUICKSTART.md)
 
 ### Requirements
 

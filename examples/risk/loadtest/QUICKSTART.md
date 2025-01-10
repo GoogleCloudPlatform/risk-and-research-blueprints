@@ -3,22 +3,34 @@
 
 ## Overview
 
-This is a general purpose gRPC load test quick start instructions for Cloud Shell. See the details of running the program in its [src/README.md](src/README.md).
+This is an example of running a loadtest library on Google Cloud Infrastructure.
 
-## Configure Terraform
+It will run using GKE horizontal pod autoscaler orchestrated using Pub/Sub, and will
+also run on Cloud Run through BigQuery. For details on the loadtest library, see
+its [README.md](src/README.md). The same techniques can be used to run any kind of
+library that is exposing gRPC.
+
+Cloud Logging, Pub/Sub, Cloud Monitoring, BigQuery, and Looker Studio will all be used
+for monitoring the infrastructure as it scales.
+
+## Setup terraform
+
+### Configure terraform
 
 Set the variables for the region and zones being used. Change this to a different region and zones (e.g.., europe-west1 and zones b, c, d) if desired.
+
 ```sh
 REGION='us-central1'
 ZONES='"a","b","c","f"'
 ```
 
 Create the terraform.tfvars configuration with the variables.
+
 ```sh
 printf 'project_id="%s"\nregion="%s"\nzones=[%s]\n' ${GOOGLE_CLOUD_PROJECT} ${REGION} ${ZONES} > terraform.tfvars
 ```
 
-### Initialize
+### Initialize terraform
 
 Inspect the terraform.tfvars. This should continue your desired project, region, and zones.
 ```sh
@@ -39,9 +51,9 @@ You may need to enable some basic APIs for Terraform to work:
 gcloud services enable iam.googleapis.com cloudresourcemanager.googleapis.com
 ```
 
-### Run the terraform
+### Apply the terraform
 
-Inspect the terraform and confirm.
+Apply the terraform to your project.
 
 ```sh
 terraform apply
@@ -52,7 +64,8 @@ timing errors and terraform apply will need to be re-run.
 
 ## Run a test GKE HPA job
 
-We will launch a test job using the horizontal pod autoscaler.
+We will launch a test job and, using the horizontal pod autoscaler, see the
+infrastructure scale up/down.
 
 ### Configure credentials
 
@@ -76,7 +89,6 @@ node auto-provisioning.
 ```sh
 kubectl get jobs
 ```
-
 
 ## Monitor the status of the job
 
@@ -106,7 +118,6 @@ tasks to the Pub/Sub topic as soon as it starts.
 kubectl logs jobs/hpa-1k-1s-s-read-small-controller
 ```
 
-
 ### Inspect Pub/Sub Subscription
 
 We can also inspect the queue in Pub/Sub. This will be the queue of outstanding tasks.
@@ -125,6 +136,14 @@ after a period of time.
 ```sh
 kubectl logs deploy/gke-hpa
 ```
+
+### Inspect the workers in the console
+
+The same workers -- with some monitoring, including CPU and memory usage -- can be
+seen in the console. 
+
+Go into the [workload console](https://console.cloud.google.com/kubernetes/workload/overview) and
+click on "gke-hpa". This will give you a view of the deployment over time.
 
 ## Observe Pub/Sub messages in BigQuery
 

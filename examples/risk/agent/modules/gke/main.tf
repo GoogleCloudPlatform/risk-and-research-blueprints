@@ -245,6 +245,10 @@ resource "google_project_iam_member" "metrics_writer" {
 # Apply configurations to the cluster
 # (whether through templates or hard-coded)
 resource "null_resource" "cluster_init" {
+  depends_on = [
+    module.gke_standard
+  ]
+
   for_each = merge(
     { for fname in fileset(".", "${path.module}/k8s/*.yaml") : fname => file(fname) },
     { "volume_yaml" = templatefile(
@@ -282,6 +286,10 @@ resource "null_resource" "cluster_init" {
 }
 
 resource "null_resource" "apply_custom_compute_class" {
+  depends_on = [
+    module.gke_standard
+  ]
+
   triggers = {
     cluster_change = local.cluster_config
     kustomize_change = sha512(join("", [

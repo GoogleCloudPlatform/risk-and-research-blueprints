@@ -73,8 +73,7 @@ Launch a template job that will create 1,000 tasks that will take
 
 See the job in GKE. It may take a while to get scheduled due to
 node auto-provisioning.
-
-```
+```sh
 kubectl get jobs
 ```
 
@@ -114,7 +113,8 @@ We can also inspect the queue in Pub/Sub. This will be the queue of outstanding 
 The link to the [subscription](https://console.cloud.google.com/cloudpubsub/subscription/detail/gke_hpa_request_sub)
 will show you the health, statistics, and also allow you to pull messages (tasks).
 
-Pull some messages (do not Ack!) and see the messages appear.
+Pull some messages (do not Ack!) and see the messages appear. These messages
+will be JSON, but adhering to the [protobuf request](https://github.com/GoogleCloudPlatform/risk-and-research-blueprints/blob/main/examples/risk/loadtest/src/request.proto) schema.
 
 ## Observe Pub/Sub messages in BigQuery
 
@@ -158,12 +158,12 @@ LIMIT 10
 
 ### Browse the logs in Cloud Logging
 
-You can go to the (logging console)[https://console.cloud.google.com/logs/query;query=resource.type%3D%22k8s_container%22%0Aresource.labels.container_name%3D%22agent%22] to see the same logs as from kubectl. This gives you a nice frontend for filtering the logs.
+You can go to the [logging console](https://console.cloud.google.com/logs/query;query=resource.type%3D%22k8s_container%22%0Aresource.labels.container_name%3D%22agent%22) to see the same logs as from kubectl. This gives you a nice frontend for filtering the logs.
 
 ### Browse the logs in BigQuery
 
-From within logging, you can also use (logging analytics)[https://console.cloud.google.com/logs/analytics] to query the logs using
-SQL. However, bringing these logs into BigQuery as a (linked dataset)[https://cloud.google.com/logging/docs/buckets#link-bq-dataset]
+From within logging, you can also use [logging analytics](https://console.cloud.google.com/logs/analytics) to query the logs using
+SQL. However, bringing these logs into BigQuery as a [linked dataset](https://cloud.google.com/logging/docs/buckets#link-bq-dataset)
 gives you the full power of BigQuery (dashboards, analytics, pipelines, etc). The data is streamed in so it is near real time.
 
 If you go back to the [BigQuery Console](https://console.cloud.google.com/bigquery), you can enter the following query to see
@@ -276,3 +276,5 @@ Feel free to try scaling up the number of tasks -- say, 10000! -- and see Cloud 
 
 You have now run a dynamically scalable GKE workload, observed it using Cloud Logging, Pub/Sub, and Cloud Monitoring, and
 run a BigQuery query that dynamically scales to execute your query.
+
+

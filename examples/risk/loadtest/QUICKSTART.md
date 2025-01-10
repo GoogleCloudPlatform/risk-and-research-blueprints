@@ -106,6 +106,7 @@ tasks to the Pub/Sub topic as soon as it starts.
 kubectl logs jobs/hpa-1k-1s-s-read-small-controller
 ```
 
+
 ### Inspect Pub/Sub Subscription
 
 We can also inspect the queue in Pub/Sub. This will be the queue of outstanding tasks.
@@ -115,6 +116,15 @@ will show you the health, statistics, and also allow you to pull messages (tasks
 
 Pull some messages (do not Ack!) and see the messages appear. These messages
 will be JSON, but adhering to the [protobuf request](https://github.com/GoogleCloudPlatform/risk-and-research-blueprints/blob/main/examples/risk/loadtest/src/request.proto) schema.
+
+### Inspect the workers
+
+We can inspect the logs from the worker. The worker will be scaled, automatically,
+after a period of time.
+
+```sh
+kubectl logs deploy/gke-hpa
+```
 
 ## Observe Pub/Sub messages in BigQuery
 
@@ -158,7 +168,7 @@ LIMIT 10
 
 ### Browse the logs in Cloud Logging
 
-You can go to the [logging console](https://console.cloud.google.com/logs/query;query=resource.type%3D%22k8s_container%22%0Aresource.labels.container_name%3D%22agent%22) to see the same logs as from kubectl. This gives you a nice frontend for filtering the logs.
+You can go to the [logging console](https://console.cloud.google.com/logs/query;query=resource.type%3D%22k8s_container%22%0Aresource.labels.container_name%3D%22agent%22;duration=PT15M?inv=1) to see the same logs as from kubectl. This gives you a nice frontend for filtering the logs.
 
 ### Browse the logs in BigQuery
 
@@ -203,7 +213,7 @@ SELECT
   SUM(ops) total_ops,
   SAFE_DIVIDE(SUM(ops),TIMESTAMP_DIFF(MAX(timestamp), MIN(timestamp), SECOND)) AS ops_per_second
 FROM
-  `fsi-scratch-26.workload.agent_stats`
+  `workload.agent_stats`
 GROUP BY
   meta.job_worker_id
 HAVING
@@ -212,7 +222,7 @@ ORDER BY
   last_active_time DESC
 ```
 
-### Create a dashboard
+### Create a Looker Studio dashboard
 
 Run the following to extract the creation link for a Looker Studio dashboard. This uses the BigQuery views -- with streaming,
 up to date, parsed logs and Pub/Sub messages -- to create a monitoring dashboard. This can be integrated with any other logging, 
@@ -222,34 +232,26 @@ streaming messages, and BigQuery data.
 terraform output -json | jq -r .lookerstudio_create_dashboard_url.value
 ```
 
+Click on the URL to create a dashboard from the template.
+
 ## Look at the Cloud Monitoring
+
+### Explore Cloud Monitoring
 
 The metrics of Pub/Sub (e.g. queue length), Kubernetes (e.g. container CPU usage), and much more is available in Cloud Monitoring.
 
 Look at some [Cloud Monitoring metrics](https://console.cloud.google.com/monitoring/metrics-explorer?pageState=%7B%22xyChart%22:%7B%22constantLines%22:%5B%5D,%22dataSets%22:%5B%7B%22plotType%22:%22LINE%22,%22targetAxis%22:%22Y1%22,%22timeSeriesFilter%22:%7B%22aggregations%22:%5B%7B%22crossSeriesReducer%22:%22REDUCE_SUM%22,%22groupByFields%22:%5B%5D,%22perSeriesAligner%22:%22ALIGN_MEAN%22%7D%5D,%22apiSource%22:%22DEFAULT_CLOUD%22,%22crossSeriesReducer%22:%22REDUCE_SUM%22,%22filter%22:%22metric.type%3D%5C%22kubernetes.io%2Fcontainer%2Fcpu%2Frequest_utilization%5C%22%20resource.type%3D%5C%22k8s_container%5C%22%22,%22groupByFields%22:%5B%5D,%22minAlignmentPeriod%22:%2260s%22,%22perSeriesAligner%22:%22ALIGN_MEAN%22%7D%7D%5D,%22options%22:%7B%22mode%22:%22COLOR%22%7D,%22y1Axis%22:%7B%22label%22:%22%22,%22scale%22:%22LINEAR%22%7D%7D%7D) and explore. The link will provide you CPU utilization on standard Cloud Monitoring.
 
-## Run a custom control UI
+### Explore Sample Dashboard - Risk Platform Overview
 
-A custom control and monitoring front end, leveraging BigQuery data and launching jobs, can be created.
-
-Create a virtual environment.
-```sh
-python3 -m venv ui/.venv
-ui/.venv/bin/python3 -m pip install --require-hashes -r ui/requirements.txt
-```
-
-Run the Gradio dashboard.
-```sh
-ui/.venv/bin/python3 ui/main.py generated/config.yaml
-```
-
-Use port 8080 or preview 8080 in the Cloud Shell (Webpreview). This allows you to load
-tests, inspect the jobs from BigQuery (similar to the dashboard), and has some deep
-links into the Console.
+There is a `Risk Platform Overview` dashboard supplied. You can find it and see
+it on the Dashboards List page as a [Custom dashboard](https://console.cloud.google.com/monitoring/dashboards?pageState=(%22dashboards%22:(%22t%22:%22Custom%22))).
 
 ## Run scalable compute with BigQuery
 
-Open [BigQuery](https://console.cloud.google.com/bigquery) and create a new query.
+### Run BigQuery query
+
+Open [BigQuery](https://console.cloud.google.com/bigquery).
 
 Create and run the following query. The `workload.workload` (which you can inspect) is connected to a Cloud Run instance which is running the same loadtest code, connected into the same logging infrastructure. Rather than using Pub/Sub, however, it uses JSON over gRPC.
 
@@ -267,10 +269,32 @@ FROM
   UNNEST(GENERATE_ARRAY(1, 100)) AS i;
 ```
 
+### Look at Cloud Run
+
 By looking at the [Cloud Run](https://console.cloud.google.com/run) and the `workload-worker-bigquery` service you can watch as it
 scales up and down. The same logging tools and metrics can be used with Cloud Run and can be leveraged and dashboards.
 
 Feel free to try scaling up the number of tasks -- say, 10000! -- and see Cloud Run scaling up even higher.
+
+## Run a custom UI
+
+A custom control and monitoring front end, leveraging BigQuery data and launching jobs, can be created.
+
+### Create a virtual environment
+
+```sh
+python3 -m venv ui/.venv
+ui/.venv/bin/python3 -m pip install --require-hashes -r ui/requirements.txt
+```
+
+### Run the Gradio dashboard
+
+```sh
+ui/.venv/bin/python3 ui/main.py generated/config.yaml
+```
+Use port 8080 or preview 8080 in the Cloud Shell (Webpreview). This allows you to load
+tests, inspect the jobs from BigQuery (similar to the dashboard), and has some deep
+links into the Console.
 
 ## Conclusion
 

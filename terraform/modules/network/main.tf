@@ -33,19 +33,20 @@ resource "google_compute_subnetwork" "cluster-1" {
   count         = var.gke_standard_enabled ? 1 : 0
   name          = "cluster-1"
   project       = data.google_project.environment.project_id
-  ip_cidr_range = "10.64.0.0/20"
+  ip_cidr_range = "10.48.0.0/16"
+  
   region        = var.region
   stack_type    = "IPV4_ONLY"
 
   network = google_compute_network.research-vpc.id
   secondary_ip_range {
     range_name    = "services-range"
-    ip_cidr_range = "10.64.32.0/26"
+    ip_cidr_range = "10.51.0.0/24"
   }
 
   secondary_ip_range {
     range_name    = "pod-ranges"
-    ip_cidr_range = "10.0.0.0/11"
+    ip_cidr_range = "10.0.0.0/12"
   }
 }
 
@@ -53,7 +54,7 @@ resource "google_compute_subnetwork" "cluster-2" {
   count         = var.gke_autopilot_enabled ? 1 : 0
   name          = "cluster-2"
   project       = data.google_project.environment.project_id
-  ip_cidr_range = "10.64.16.0/20"
+  ip_cidr_range = "10.49.0.0/16"
   region        = var.region
 
   stack_type = "IPV4_ONLY"
@@ -61,12 +62,33 @@ resource "google_compute_subnetwork" "cluster-2" {
   network = google_compute_network.research-vpc.id
   secondary_ip_range {
     range_name    = "services-range"
-    ip_cidr_range = "10.64.32.64/26"
+    ip_cidr_range = "10.51.1.0/24"
   }
 
   secondary_ip_range {
     range_name    = "pod-range"
-    ip_cidr_range = "10.32.0.0/11"
+    ip_cidr_range = "10.16.0.0/12"
+  }
+}
+
+resource "google_compute_subnetwork" "cluster-3" {
+  count         = var.gke_standard_enabled ? 1 : 0
+  name          = "cluster-3"
+  project       = data.google_project.environment.project_id
+  ip_cidr_range = "10.50.0.0/16"
+  region        = var.region
+
+  stack_type = "IPV4_ONLY"
+
+  network = google_compute_network.research-vpc.id
+  secondary_ip_range {
+    range_name    = "services-range"
+    ip_cidr_range = "10.51.2.0/24"
+  }
+
+  secondary_ip_range {
+    range_name    = "pod-range"
+    ip_cidr_range = "10.32.0.0/12"
   }
 }
 

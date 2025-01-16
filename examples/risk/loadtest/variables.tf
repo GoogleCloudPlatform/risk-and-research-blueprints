@@ -90,6 +90,20 @@ variable "scaled_control_plane" {
   default     = false
 }
 
+# Max CPU's for GKE Cluster
+variable "cluster_max_cpus" {
+  type        = number
+  default     = 10000
+  description = "Max CPU in cluster autoscaling resource limits"
+}
+
+# Max memory for GKE Cluster
+variable "cluster_max_memory" {
+  type        = number
+  default     = 80000
+  description = "Max memory in cluster autoscaling resource limits"
+}
+
 # Request additional quota for a scaled load test run
 variable "additional_quota_enabled" {
   description = "Enable quota requests for additional"

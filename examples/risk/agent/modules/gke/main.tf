@@ -110,37 +110,6 @@ data "google_project" "environment" {
   project_id = var.project_id
 }
 
-# Module to manage project-level settings and API enablement
-# module "project" {
-#     source = "../../../../../terraform/modules/project"
-#     project_id = data.google_project.environment.project_id
-#     region = var.region
-# }
-
-# Module to create VPC network and subnets
-module "networking" {
-  source                = "../../../../../terraform/modules/network"
-  project_id            = data.google_project.environment.project_id
-  region                = var.region
-  gke_standard_enabled  = var.gke_standard_enabled
-  gke_autopilot_enabled = var.gke_autopilot_enabled
-}
-
-# Conditionally create a GKE Standard cluster
-module "gke_standard" {
-  count                = var.gke_standard_enabled ? 1 : 0
-  source               = "../../../../../terraform/modules/gke-standard"
-  project_id           = data.google_project.environment.project_id
-  region               = var.region
-  zones                = var.zones
-  network              = module.networking.network
-  subnet               = module.networking.subnet-1.id
-  ip_range_services    = module.networking.subnet-1.secondary_ip_range[0].range_name
-  ip_range_pods        = module.networking.subnet-1.secondary_ip_range[1].range_name
-  depends_on           = [module.networking]
-  scaled_control_plane = var.scaled_control_plane
-  artifact_registry    = var.artifact_registry
-}
 
 resource "google_monitoring_dashboard" "risk-platform-overview" {
   project        = data.google_project.environment.project_id
@@ -195,25 +164,48 @@ resource "google_storage_bucket" "gcs_storage_data" {
   uniform_bucket_level_access = true
 }
 
+resource "google_storage_bucket" "us_dual_region_bucket" {
+  name = "${var.project_id}-dualregion-gke-data-${random_string.suffix.id}"
+  project = data.google_project.environment.project_id
+  location      = "US"
+  uniform_bucket_level_access = true
+  rpo = "ASYNC_TURBO"
+  custom_placement_config {
+    data_locations = ["US-CENTRAL1","US-EAST4"]
+  }
+  versioning {
+    enabled = true
+  }
+
+  lifecycle_rule {
+    condition {
+      age = 30
+    }
+    action {
+      type = "Delete"
+    }
+  }
+}
+
 
 # IAM for Workloads in GKE
 
 resource "google_project_iam_member" "storage_objectuser" {
   project = data.google_project.environment.project_id
   role    = "roles/storage.objectUser"
-  member  = "principalSet://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${data.google_project.environment.project_id}.svc.id.goog/kubernetes.cluster/https://container.googleapis.com/v1/projects/${data.google_project.environment.project_id}/locations/${var.region}/clusters/${module.gke_standard[0].cluster_name}"
+  member  = "principalSet://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${data.google_project.environment.project_id}.svc.id.goog/kubernetes.cluster/https://container.googleapis.com/v1/projects/${data.google_project.environment.project_id}/locations/${var.region}/clusters/${var.cluster_name}"
 }
 
 resource "google_project_iam_member" "pubsub_publisher" {
   project = data.google_project.environment.project_id
   role    = "roles/pubsub.publisher"
-  member  = "principalSet://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${data.google_project.environment.project_id}.svc.id.goog/kubernetes.cluster/https://container.googleapis.com/v1/projects/${data.google_project.environment.project_id}/locations/${var.region}/clusters/${module.gke_standard[0].cluster_name}"
+  member  = "principalSet://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${data.google_project.environment.project_id}.svc.id.goog/kubernetes.cluster/https://container.googleapis.com/v1/projects/${data.google_project.environment.project_id}/locations/${var.region}/clusters/${var.cluster_name}"
 }
 
 resource "google_project_iam_member" "pubsub_subscriber" {
   project = data.google_project.environment.project_id
   role    = "roles/pubsub.subscriber"
-  member  = "principalSet://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${data.google_project.environment.project_id}.svc.id.goog/kubernetes.cluster/https://container.googleapis.com/v1/projects/${data.google_project.environment.project_id}/locations/${var.region}/clusters/${module.gke_standard[0].cluster_name}"
+  member  = "principalSet://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${data.google_project.environment.project_id}.svc.id.goog/kubernetes.cluster/https://container.googleapis.com/v1/projects/${data.google_project.environment.project_id}/locations/${var.region}/clusters/${var.cluster_name}"
 }
 
 #
@@ -226,20 +218,12 @@ resource "google_project_iam_member" "gke_hpa" {
   project = var.project_id
   role    = "roles/monitoring.viewer"
   member  = "principal://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${var.project_id}.svc.id.goog/subject/ns/custom-metrics/sa/custom-metrics-stackdriver-adapter"
-
-  depends_on = [
-    module.gke_standard
-  ]
 }
 
 resource "google_project_iam_member" "metrics_writer" {
   project = var.project_id
   role    = "roles/monitoring.metricWriter"
   member  = "principal://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${var.project_id}.svc.id.goog/subject/ns/default/sa/default"
-
-  depends_on = [
-    module.gke_standard
-  ]
 }
 
 # Apply configurations to the cluster
@@ -253,7 +237,7 @@ resource "null_resource" "cluster_init" {
     { for fname in fileset(".", "${path.module}/k8s/*.yaml") : fname => file(fname) },
     { "volume_yaml" = templatefile(
       "${path.module}/k8s/volume.yaml.templ", {
-        gcs_storage_data = google_storage_bucket.gcs_storage_data.id
+        gcs_storage_data = google_storage_bucket.us_dual_region_bucket.id
       }),
       "hpa_yaml" = templatefile(
         "${path.module}/k8s/hpa.yaml.templ", {
@@ -305,6 +289,27 @@ resource "null_resource" "apply_custom_compute_class" {
     ${local.kubeconfig_script}
 
     kubectl apply -k "${path.module}/../../../../../kubernetes/compute-classes/"
+
+    EOT
+  }
+}
+
+resource "null_resource" "apply_custom_priority_class" {
+  triggers = {
+    cluster_change = local.cluster_config
+    kustomize_change = sha512(join("", [
+      for f in fileset(".", "${path.module}/../../../../../kubernetes/priority-classes/**") :
+      filesha512(f)
+    ]))
+  }
+
+  provisioner "local-exec" {
+    when    = create
+    command = <<-EOT
+
+    ${local.kubeconfig_script}
+
+    kubectl apply -k "${path.module}/../../../../../kubernetes/priority-classes/"
 
     EOT
   }

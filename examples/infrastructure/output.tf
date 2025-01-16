@@ -37,6 +37,7 @@ output "artifact_registry" {
     name              = module.artifact_registry.artifact_registry.name
     url               = module.artifact_registry.artifact_registry_url
     artifact_registry = module.artifact_registry.artifact_registry
+    id                = module.artifact_registry.artifact_registry_id
   }
 }
 
@@ -50,4 +51,9 @@ output "parallelstore_instance" {
     } : null,
     null
   )
+}
+
+output "gke_standard_cluster_name" {
+  value = var.gke_standard_cluster_name
+  description = "Name of the GKE Standard Cluster"
 }

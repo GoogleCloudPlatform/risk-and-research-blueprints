@@ -37,7 +37,7 @@ output "monitoring_dashboard_url" {
 # Cluster
 output "cluster_url" {
   description = "Cluster url"
-  value       = "https://console.cloud.google.com/kubernetes/workload/overview?project=${var.project_id}&pageState=(%22savedViews%22:(%22n%22:%5B%22default%22%5D,%22c%22:%5B%22gke%2F${var.region}%2F${module.gke_standard[0].cluster_name}%22%5D))"
+  value       = "https://console.cloud.google.com/kubernetes/workload/overview?project=${var.project_id}&pageState=(%22savedViews%22:(%22n%22:%5B%22default%22%5D,%22c%22:%5B%22gke%2F${var.region}%2F${var.cluster_name}%22%5D))"
 }
 
 # Test scripts (shell scripts)

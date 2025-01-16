@@ -21,3 +21,8 @@ output "artifact_registry" {
   description = "Address of the remote repository."
   value       = google_artifact_registry_repository.research-images
 }
+
+output "artifact_registry_id" {
+  description = "ID of remote repository"
+  value = google_artifact_registry_repository.research-images.id
+}

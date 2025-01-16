@@ -26,10 +26,13 @@ spec:
         app: ${job_name}
       annotations:
         gke-gcsfuse/volumes: "true"
-        gke-gcsfuse/cpu-request: "0"
-        gke-gcsfuse/memory-request: "0"
+        gke-gcsfuse/cpu-request: "50m"
+        gke-gcsfuse/memory-request: "64Mi"
+        gke-gcsfuse/cpu-limit: "200m"
+        gke-gcsfuse/memory-limit: "256Mi"
         gke-gcsfuse/ephemeral-storage-request: "1Gi"
     spec:
+      priorityClassName: default-priority
       nodeSelector:
         cloud.google.com/compute-class: spot-capacity
       containers:

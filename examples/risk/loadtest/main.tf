@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 locals {
   workload_args          = ["serve", "--logJSON"]
   workload_grpc_endpoint = "http://localhost:2002/main.LoadTestService/RunLibrary"
@@ -20,8 +19,10 @@ locals {
     ["writedata", "--logJSON", "--showProgress=false", "--size", "104857600", "--parallel", "2", "--count", "10", "/data/read_dir/large"],
     ["writedata", "--logJSON", "--showProgress=false", "--size", "10485760", "--parallel", "20", "--count", "100", "/data/read_dir/medium"],
     ["writedata", "--logJSON", "--showProgress=false", "--size", "1048576", "--parallel", "20", "--count", "1000", "/data/read_dir/small"],
+    ["writedata", "--logJSON", "--showProgress=false", "--size", "1048576", "--parallel", "20", "--count", "5", "/data/read_dir/small-low"],
     ["gentasks", "--logJSON", "--count=10000", "--initMinMicros=1000000", "--minMicros=1000000", "--initReadDir=/data/read_dir/small", "/data/tasks/10k_1s_1s_read_small.jsonl.gz"],
     ["gentasks", "--logJSON", "--count=1000", "--initMinMicros=1000000", "--minMicros=1000000", "--initReadDir=/data/read_dir/small", "/data/tasks/1k_1s_1s_read_small.jsonl.gz"],
+    ["gentasks", "--logJSON", "--count=100000", "--initMinMicros=10000000", "--minMicros=20000000", "--minMicros=35000000", "--initReadDir=/data/read_dir/small-low", "/data/tasks/100k_1s_3s_read_5_small.jsonl.gz"],
   ]
   test_configs = [
     { name = "hpa_1k_1s_s_read_small", testfile = "/data/tasks/1k_1s_1s_read_small.jsonl.gz", parallel = 0, description = "Autoscaling workers, 1 second compute and small folder read on initialization, 1,000 tasks for 1 second task compute." },
@@ -33,6 +34,7 @@ locals {
     { name = "10_10k_1s_s_read_small", testfile = "/data/tasks/10k_1s_1s_read_small.jsonl.gz", parallel = 10, description = "10 workers, 1 second compute and small folder read on initialization, 10,000 tasks for 1 second compute." },
     { name = "100_10k_1s_s_read_small", testfile = "/data/tasks/10k_1s_1s_read_small.jsonl.gz", parallel = 100, description = "100 workers, 1 second compute and small folder read on initialization, 10,000 tasks for 1 second compute." },
     { name = "500_10k_1s_s_read_small", testfile = "/data/tasks/10k_1s_1s_read_small.jsonl.gz", parallel = 500, description = "500 workers, 1 second compute and small folder read on initialization, 10,000 tasks for 1 second compute." },
+    { name = "30000_100k_10s_s_read_small", testfile = "/data/tasks/100k_1s_3s_read_5_small.jsonl.gz", parallel = 30000, description = "30000 workers, 10 second compute and small folder read on initialization, 100,000 tasks for 20-35 seconds of compute." },
   ]
   test_configs_dict = {
     for config in local.test_configs :
@@ -76,27 +78,17 @@ locals {
   })
 }
 
-#
-# API Enablement
-#
-
-# Module to manage project-level settings and API enablement
-module "project" {
-  source               = "../../../terraform/modules/project"
+module "infrastructure" {
+  source = "../../infrastructure"
   project_id           = var.project_id
   region               = var.region
-  enable_log_analytics = false
-}
-
-#
-# Artifact Repository
-#
-
-module "artifact_registry" {
-  source     = "../../../terraform/modules/artifact-registry"
-  region     = var.region
-  project_id = var.project_id
-  name       = "example-images"
+  gke_standard_enabled = var.gke_standard_enabled
+  gke_autopilot_enabled = var.gke_autopilot_enabled
+  parallelstore_enabled = var.parallelstore_enabled
+  scaled_control_plane = var.scaled_control_plane
+  cluster_max_cpus     = var.cluster_max_cpus
+  cluster_max_memory   = var.cluster_max_memory
+  additional_quota_enabled = var.additional_quota_enabled
 }
 
 #
@@ -108,7 +100,9 @@ module "agent" {
 
   project_id    = var.project_id
   region        = var.region
-  repository_id = module.artifact_registry.artifact_registry.repository_id
+  repository_id = module.infrastructure.artifact_registry.name
+
+
   containers = {
     agent = {
       source = "${path.module}/../agent/src"
@@ -123,9 +117,9 @@ module "agent" {
 }
 
 
-#
-# Cloud Run
-#
+# #
+# # Cloud Run
+# #
 
 module "cloudrun" {
   source = "../agent/modules/run"
@@ -149,14 +143,14 @@ module "cloudrun" {
 }
 
 
-#
-# GKE
-#
+# #
+# # GKE
+# #
 
 module "gke" {
   source     = "../agent/modules/gke"
-  depends_on = [module.project]
   zones      = var.zones
+  depends_on = [module.infrastructure]
 
   # TODO: Mark this part of a count and optional.
   count = 1
@@ -169,7 +163,7 @@ module "gke" {
   # GKE specific options
   gke_standard_enabled  = var.gke_standard_enabled
   gke_autopilot_enabled = var.gke_autopilot_enabled
-  artifact_registry     = module.artifact_registry.artifact_registry
+  cluster_name = module.infrastructure.gke_standard_cluster_name
 
   # Workload options
   # TODO: Other configuration for the workload - needs to be standardized
@@ -199,7 +193,7 @@ resource "google_logging_linked_dataset" "logging_linked_dataset" {
   bucket      = google_logging_project_bucket_config.analytics-enabled-bucket.id
   description = "Linked dataset test"
   depends_on = [
-    module.project
+    module.infrastructure
   ]
 }
 
@@ -221,7 +215,7 @@ resource "google_bigquery_dataset" "main" {
   dataset_id = "workload"
   location   = var.region
   depends_on = [
-    module.project
+    module.infrastructure
   ]
 }
 
@@ -380,7 +374,8 @@ module "ui_image" {
 
   project_id    = var.project_id
   region        = var.region
-  repository_id = module.artifact_registry.artifact_registry.repository_id
+  repository_id = module.infrastructure.artifact_registry.name
+
   containers = {
     ui = {
       source      = "${path.module}/ui"

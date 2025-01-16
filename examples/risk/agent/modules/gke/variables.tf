@@ -41,14 +41,6 @@ variable "cluster_name" {
   default = "gke-risk-research"
 }
 
-variable "artifact_registry" {
-  type = object({
-    project  = string
-    location = string
-    name     = string
-  })
-}
-
 # Containers to build
 variable "agent_image" {
   type        = string

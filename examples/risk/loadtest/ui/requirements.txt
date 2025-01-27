@@ -117,8 +117,8 @@ google-resumable-media==2.7.2 \
 googleapis-common-protos==1.66.0 \
     --hash=sha256:c3e7b33d15fdca5374cc0a7346dd92ffa847425cc4ea941d970f13680052ec8c \
     --hash=sha256:d7abcd75fabb2e0ec9f74466401f6c119a0b498e27370e9be4c94cb7e382b8ed
-gradio==5.3.0 \
-    --hash=sha256:1613b0ab3cb0a582fe80e9d0dc7114a7045a90c494e94e34f907debb38179a33
+gradio==5.11.0 \
+    --hash=sha256:0b8fdb90ceaad2bb8bb7aecb3ad5b05d3020945eb6162fb779c6c09525f94082
 gradio-client==1.4.2 \
     --hash=sha256:07c5184ad6385f50f9e6eae3a262ad6afcf9380b6a400d070652f76e14222dbd \
     --hash=sha256:76a34996b4580939a3fbd10144fde04eced586c033b6cdcb315d69b1459136d1

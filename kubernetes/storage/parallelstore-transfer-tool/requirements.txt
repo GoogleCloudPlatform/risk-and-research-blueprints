@@ -6,7 +6,7 @@ certifi==2024.8.30
     # via requests
 charset-normalizer==3.4.0
     # via requests
-google-api-core==2.22.0
+google-api-core==2.24.1
     # via google-cloud-parallelstore
 google-auth==2.35.0
     # via

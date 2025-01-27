@@ -79,7 +79,7 @@ $(terraform output -raw get_credentials)
 Launch a template job that will create 1,000 tasks that will take
 1 second to initialize and each task will take 1 second.
 ```sh
-./generated/gke_hpa_1k_1s_s_read_small.sh 
+./generated/gke_hpa_1k_1s_s_read_small.sh
 ```
 
 ### See the job
@@ -107,7 +107,7 @@ We can also describe the Horizontal Pod Autoscaler. This monitors the Pub/Sub
 metrics to calculate the desired number of pods in the deployment.
 
 ```sh
-kubectl describe hpa gke-hpa 
+kubectl describe hpa gke-hpa
 ```
 
 ### Inspect the controller publishing into the queue
@@ -140,7 +140,7 @@ kubectl logs deploy/gke-hpa
 ### Inspect the workers in the console
 
 The same workers -- with some monitoring, including CPU and memory usage -- can be
-seen in the console. 
+seen in the console.
 
 Go into the [workload console](https://console.cloud.google.com/kubernetes/workload/overview) and
 click on "gke-hpa". This will give you a view of the deployment over time.
@@ -244,7 +244,7 @@ ORDER BY
 ### Create a Looker Studio dashboard
 
 Run the following to extract the creation link for a Looker Studio dashboard. This uses the BigQuery views -- with streaming,
-up to date, parsed logs and Pub/Sub messages -- to create a monitoring dashboard. This can be integrated with any other logging, 
+up to date, parsed logs and Pub/Sub messages -- to create a monitoring dashboard. This can be integrated with any other logging,
 streaming messages, and BigQuery data.
 
 ```sh
@@ -319,5 +319,3 @@ links into the Console.
 
 You have now run a dynamically scalable GKE workload, observed it using Cloud Logging, Pub/Sub, and Cloud Monitoring, and
 run a BigQuery query that dynamically scales to execute your query.
-
-

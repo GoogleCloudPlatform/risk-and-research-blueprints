@@ -344,8 +344,13 @@ resource "google_container_node_pool" "primary_spot_nodes" {
   location       = var.region
   cluster        = google_container_cluster.risk-research.name
   node_locations = [random_shuffle.zone.result[0], random_shuffle.zone.result[1], random_shuffle.zone.result[2]]
+<<<<<<< HEAD
   # max_pods_per_node = 64
   initial_node_count = 5
+||||||| parent of e660876 (Updates to support multi region deployments)
+  node_locations = local.zones
+=======
+>>>>>>> e660876 (Updates to support multi region deployments)
 
   autoscaling {
     location_policy      = "ANY"

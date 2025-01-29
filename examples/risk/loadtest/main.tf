@@ -54,7 +54,21 @@ locals {
       startswith(key, "run_") ? (
         var.cloudrun_enabled && length(module.cloudrun) > 0 ?
         try(module.cloudrun[0].test_scripts[trimprefix(key, "run_")], null) : null
+<<<<<<< HEAD
         ) : (
+||||||| parent of e660876 (Updates to support multi region deployments)
+  local_test_scripts = merge(
+    length(module.cloudrun) == 0 ? {} : {
+      for key, script in module.cloudrun[0].test_scripts :
+      "run_${key}.sh" => script
+    },
+    length(module.gke) == 0 ? {} : {
+      for key, script in module.gke[0].test_scripts :
+      "gke_${key}.sh" => script
+  })
+=======
+      ) : (
+>>>>>>> e660876 (Updates to support multi region deployments)
         length(module.gke) > 0 ?
         try(module.gke[module.default_region.default_region].test_scripts[trimprefix(key, "gke_")], null) : null
       )
@@ -92,7 +106,12 @@ locals {
 }
 
 module "default_region" {
+<<<<<<< HEAD
   source  = "../../../terraform/modules/region-analysis"
+||||||| parent of e660876 (Updates to support multi region deployments)
+=======
+  source = "../../../terraform/modules/region-analysis"
+>>>>>>> e660876 (Updates to support multi region deployments)
   regions = var.regions
 }
 
@@ -120,7 +139,15 @@ module "infrastructure" {
 module "agent" {
   source = "../../../terraform/modules/builder"
 
+<<<<<<< HEAD
   project_id        = var.project_id
+||||||| parent of e660876 (Updates to support multi region deployments)
+  project_id    = var.project_id
+  region        = var.region
+  repository_id = module.infrastructure.artifact_registry.name
+=======
+  project_id = var.project_id
+>>>>>>> e660876 (Updates to support multi region deployments)
   region            = module.default_region.default_region
   repository_region = module.infrastructure.artifact_registry.location
   repository_id     = module.infrastructure.artifact_registry.name
@@ -241,11 +268,23 @@ resource "google_logging_project_sink" "my-sink" {
 }
 
 resource "google_bigquery_dataset" "main" {
+<<<<<<< HEAD
   project                    = var.project_id
   dataset_id                 = "workload"
   location                   = module.default_region.default_region
   delete_contents_on_destroy = true
 
+||||||| parent of e660876 (Updates to support multi region deployments)
+  project    = var.project_id
+  dataset_id = "workload"
+  location   = var.region
+=======
+  project    = var.project_id
+  dataset_id = "workload"
+  location   = module.default_region.default_region
+  delete_contents_on_destroy = true
+  
+>>>>>>> e660876 (Updates to support multi region deployments)
   depends_on = [
     module.infrastructure
   ]

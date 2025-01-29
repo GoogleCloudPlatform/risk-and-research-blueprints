@@ -19,7 +19,6 @@ metadata:
 spec:
   minReplicas: 1
   maxReplicas: 50000
-  maxReplicas: 50000
   metrics:
   - external:
       metric:
@@ -57,10 +56,6 @@ spec:
         gke-gcsfuse/memory-request: "64Mi"
         gke-gcsfuse/cpu-limit: "1"
         gke-gcsfuse/memory-limit: "1Gi"
-        gke-gcsfuse/cpu-request: "50m"
-        gke-gcsfuse/memory-request: "64Mi"
-        gke-gcsfuse/cpu-limit: "1"
-        gke-gcsfuse/memory-limit: "1Gi"
         gke-gcsfuse/ephemeral-storage-request: "1Gi"
     spec:
       nodeSelector:
@@ -80,7 +75,6 @@ spec:
           limits:
             cpu: "250m"
             memory: "1Gi"
-            memory: "1Gi"
         volumeMounts:
         - name: gcs-data
           mountPath: /data
@@ -88,10 +82,8 @@ spec:
         resources:
           requests:
             memory: "3Gi"
-            cpu: "1800m"
+            cpu: "900m"
           limits:
-            cpu: "3900m"
-            memory: "7Gi"
             cpu: "3900m"
             memory: "7Gi"
         image: ${agent_image}

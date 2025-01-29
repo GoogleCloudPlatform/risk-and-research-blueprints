@@ -85,7 +85,7 @@ resource "google_pubsub_topic" "topic" {
   project  = var.project_id
   name     = each.value
   message_storage_policy {
-    allowed_persistence_regions = [var.region]
+    allowed_persistence_regions = var.regions
   }
 }
 
@@ -96,12 +96,6 @@ resource "google_pubsub_subscription" "subscription" {
   name                         = "${each.value}_sub"
   enable_exactly_once_delivery = true
   ack_deadline_seconds         = 60
-<<<<<<< HEAD
-||||||| parent of 02b97f7 (- A)
-  expiration_policy {
-    ttl = ""
-  }
-=======
   expiration_policy {
     ttl = ""
   }
@@ -109,7 +103,6 @@ resource "google_pubsub_subscription" "subscription" {
     minimum_backoff = "30s"
     maximum_backoff = "600s"
   }
->>>>>>> 02b97f7 (- A)
 }
 
 
@@ -132,25 +125,48 @@ resource "google_storage_bucket" "gcs_storage_data" {
   uniform_bucket_level_access = true
 }
 
+resource "google_storage_bucket" "us_dual_region_bucket" {
+  name = "${var.project_id}-dualregion-gke-data-${random_string.suffix.id}"
+  project = data.google_project.environment.project_id
+  location      = "US"
+  uniform_bucket_level_access = true
+  rpo = "ASYNC_TURBO"
+  custom_placement_config {
+    data_locations = ["US-CENTRAL1","US-EAST4"]
+  }
+  versioning {
+    enabled = true
+  }
+
+  lifecycle_rule {
+    condition {
+      age = 30
+    }
+    action {
+      type = "Delete"
+    }
+  }
+}
+
 
 # IAM for Workloads in GKE
 
 resource "google_project_iam_member" "storage_objectuser" {
   project = data.google_project.environment.project_id
   role    = "roles/storage.objectUser"
-  member  = "principalSet://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${data.google_project.environment.project_id}.svc.id.goog/kubernetes.cluster/https://container.googleapis.com/v1/projects/${data.google_project.environment.project_id}/locations/${var.region}/clusters/${module.gke_standard[0].cluster_name}"
+  member  = "principalSet://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${data.google_project.environment.project_id}.svc.id.goog/kubernetes.cluster/https://container.googleapis.com/v1/projects/${data.google_project.environment.project_id}/locations/${var.region}/clusters/${var.cluster_name}"
 }
 
 resource "google_project_iam_member" "pubsub_publisher" {
   project = data.google_project.environment.project_id
   role    = "roles/pubsub.publisher"
-  member  = "principalSet://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${data.google_project.environment.project_id}.svc.id.goog/kubernetes.cluster/https://container.googleapis.com/v1/projects/${data.google_project.environment.project_id}/locations/${var.region}/clusters/${module.gke_standard[0].cluster_name}"
+  member  = "principalSet://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${data.google_project.environment.project_id}.svc.id.goog/kubernetes.cluster/https://container.googleapis.com/v1/projects/${data.google_project.environment.project_id}/locations/${var.region}/clusters/${var.cluster_name}"
 }
 
 resource "google_project_iam_member" "pubsub_subscriber" {
   project = data.google_project.environment.project_id
   role    = "roles/pubsub.subscriber"
-  member  = "principalSet://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${data.google_project.environment.project_id}.svc.id.goog/kubernetes.cluster/https://container.googleapis.com/v1/projects/${data.google_project.environment.project_id}/locations/${var.region}/clusters/${module.gke_standard[0].cluster_name}"
+  member  = "principalSet://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${data.google_project.environment.project_id}.svc.id.goog/kubernetes.cluster/https://container.googleapis.com/v1/projects/${data.google_project.environment.project_id}/locations/${var.region}/clusters/${var.cluster_name}"
 }
 
 #
@@ -171,76 +187,107 @@ resource "google_project_iam_member" "metrics_writer" {
   member  = "principal://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${var.project_id}.svc.id.goog/subject/ns/default/sa/default"
 }
 
-# Regional Resources
+# Apply configurations to the cluster
+# (whether through templates or hard-coded)
+resource "null_resource" "cluster_init" {
+  depends_on = [
+    module.gke_standard
+  ]
 
-# GCS bucket per region
-resource "google_storage_bucket" "gcs_storage_data" {
-  for_each                    = toset(var.regions)
-  project                     = var.project_id
-  location                    = each.value
-  name                        = "${var.project_id}-${each.value}-gke-data-${random_string.suffix.id}"
-  uniform_bucket_level_access = true
-  force_destroy               = true
-  hierarchical_namespace {
-    enabled = var.hsn_bucket
+  for_each = merge(
+    { for fname in fileset(".", "${path.module}/k8s/*.yaml") : fname => file(fname) },
+    { "volume_yaml" = templatefile(
+      "${path.module}/k8s/volume.yaml.templ", {
+        gcs_storage_data = google_storage_bucket.us_dual_region_bucket.id
+      }),
+      "hpa_yaml" = templatefile(
+        "${path.module}/k8s/hpa.yaml.templ", {
+          name                = "gke-hpa",
+          workload_image      = var.workload_image,
+          workload_args       = var.workload_args,
+          workload_endpoint   = var.workload_grpc_endpoint,
+          agent_image         = var.agent_image,
+          gke_hpa_request_sub = google_pubsub_subscription.subscription[var.gke_hpa_request].name
+          gke_hpa_response    = var.gke_hpa_response
+      }),
+    }
+  )
+
+  triggers = {
+    template       = each.value
+    cluster_change = local.cluster_config
+  }
+
+  provisioner "local-exec" {
+    when    = create
+    command = <<-EOT
+    ${local.kubeconfig_script}
+
+    kubectl apply -f - <<EOF
+    ${each.value}
+    EOF
+    EOT
   }
 }
 
-# Create IAM role bindings for each GKE cluster
-resource "google_project_iam_member" "storage_objectuser" {
-  for_each = { for idx, cluster in var.gke_clusters : idx => cluster }
-  project  = data.google_project.environment.project_id
-  role     = "roles/storage.objectUser"
-  member   = "principalSet://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${data.google_project.environment.project_id}.svc.id.goog/kubernetes.cluster/https://container.googleapis.com/v1/projects/${data.google_project.environment.project_id}/locations/${each.value.region}/clusters/${each.value.cluster_name}"
+resource "null_resource" "apply_custom_compute_class" {
+  depends_on = [
+    module.gke_standard
+  ]
+
+  triggers = {
+    cluster_change = local.cluster_config
+    kustomize_change = sha512(join("", [
+      for f in fileset(".", "${path.module}/../../../../../kubernetes/compute-classes/**") :
+      filesha512(f)
+    ]))
+  }
+
+  provisioner "local-exec" {
+    when    = create
+    command = <<-EOT
+
+    ${local.kubeconfig_script}
+
+    kubectl apply -k "${path.module}/../../../../../kubernetes/compute-classes/"
+
+    EOT
+  }
 }
 
-resource "google_project_iam_member" "pubsub_publisher" {
-  for_each = { for idx, cluster in var.gke_clusters : idx => cluster }
-  project  = data.google_project.environment.project_id
-  role     = "roles/pubsub.publisher"
-  member   = "principalSet://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${data.google_project.environment.project_id}.svc.id.goog/kubernetes.cluster/https://container.googleapis.com/v1/projects/${data.google_project.environment.project_id}/locations/${each.value.region}/clusters/${each.value.cluster_name}"
+resource "null_resource" "apply_custom_priority_class" {
+  triggers = {
+    cluster_change = local.cluster_config
+    kustomize_change = sha512(join("", [
+      for f in fileset(".", "${path.module}/../../../../../kubernetes/priority-classes/**") :
+      filesha512(f)
+    ]))
+  }
+
+  provisioner "local-exec" {
+    when    = create
+    command = <<-EOT
+
+    ${local.kubeconfig_script}
+
+    kubectl apply -k "${path.module}/../../../../../kubernetes/priority-classes/"
+
+    EOT
+  }
 }
 
-resource "google_project_iam_member" "pubsub_subscriber" {
-  for_each = { for idx, cluster in var.gke_clusters : idx => cluster }
-  project  = data.google_project.environment.project_id
-  role     = "roles/pubsub.subscriber"
-  member   = "principalSet://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${data.google_project.environment.project_id}.svc.id.goog/kubernetes.cluster/https://container.googleapis.com/v1/projects/${data.google_project.environment.project_id}/locations/${each.value.region}/clusters/${each.value.cluster_name}"
-}
-
-resource "google_project_iam_member" "pubsub_viewer" {
-  for_each = { for idx, cluster in var.gke_clusters : idx => cluster }
-  project  = data.google_project.environment.project_id
-  role     = "roles/pubsub.viewer"
-  member   = "principalSet://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${data.google_project.environment.project_id}.svc.id.goog/kubernetes.cluster/https://container.googleapis.com/v1/projects/${data.google_project.environment.project_id}/locations/${each.value.region}/clusters/${each.value.cluster_name}"
-}
-
-# Apply Resource to each GKE cluster
-module "config_apply" {
-  for_each     = { for idx, cluster in var.gke_clusters : idx => cluster }
-  source       = "../config_apply"
-  project_id   = data.google_project.environment.project_id
-  region       = each.value.region
-  cluster_name = each.value.cluster_name
-  agent_image  = var.agent_image
-  # Workload options
-  workload_image         = var.workload_image
-  workload_args          = var.workload_args
-  workload_grpc_endpoint = var.workload_grpc_endpoint
-  workload_init_args     = var.workload_init_args
-  test_configs           = var.test_configs
-  gcs_bucket             = google_storage_bucket.gcs_storage_data[each.value.region].id
-  # set this to empty string if not enabled
-  pubsub_hpa_request = local.enable_hpa == 1 ? google_pubsub_subscription.subscription[var.gke_hpa_request].name : ""
-  pubsub_job_request = local.enable_jobs == 1 ? google_pubsub_subscription.subscription[var.gke_job_request].name : ""
-
-  # Parallelstore Config
-  parallelstore_enabled       = var.parallelstore_enabled
-  parallelstore_access_points = var.parallelstore_enabled ? join(",", var.parallelstore_instances[each.value.region].access_points) : null
-  parallelstore_vpc_name      = var.parallelstore_enabled ? var.vpc_name : null
-  parallelstore_location      = var.parallelstore_enabled ? var.parallelstore_instances[each.value.region].location : null
-  parallelstore_instance_name = var.parallelstore_enabled ? var.parallelstore_instances[each.value.region].name : null
-  parallelstore_capacity_gib  = var.parallelstore_enabled ? var.parallelstore_instances[each.value.region].capacity_gib : null
+# Run workload initialization jobs
+resource "null_resource" "job_init" {
+  for_each = {
+    for id, cfg in local.workload_init_args :
+    id => templatefile("${path.module}/k8s/job.templ", {
+      job_name       = replace(id, "/[_\\.]/", "-"),
+      container_name = replace(id, "/[_\\.]/", "-"),
+      parallel       = 1,
+      image          = cfg.image,
+      args           = cfg.args
+    })
+  }
 
   depends_on = [
     google_project_iam_member.storage_objectuser,

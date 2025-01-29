@@ -30,7 +30,6 @@ output "artifact_registry" {
     artifact_registry = module.artifact_registry.artifact_registry
     id                = module.artifact_registry.artifact_registry_id
     location          = module.artifact_registry.artifact_registry_region
-    location          = module.artifact_registry.artifact_registry_region
   }
 }
 

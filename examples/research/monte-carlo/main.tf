@@ -18,11 +18,11 @@ data "google_project" "environment" {
 }
 
 module "infrastructure" {
-  source                   = "../../infrastructure"
-  project_id               = var.project_id
-  regions                  = var.regions
-  clusters_per_region      = var.clusters_per_region
-  parallelstore_enabled    = var.parallelstore_enabled
+  source                = "../../infrastructure"
+  project_id            = var.project_id
+  regions               = var.regions
+  clusters_per_region   = var.clusters_per_region
+  parallelstore_enabled = var.parallelstore_enabled
 }
 
 

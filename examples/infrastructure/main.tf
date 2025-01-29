@@ -42,14 +42,14 @@ resource "google_compute_network" "research-vpc" {
 }
 
 module "networking" {
-  for_each              = toset(var.regions)
-  region                = each.key
-  regions               = var.regions
-  source                = "../../terraform/modules/network"
-  project_id            = data.google_project.environment.project_id
-  depends_on            = [module.project]
-  vpc_id                = google_compute_network.research-vpc.id
-  vpc_name              = google_compute_network.research-vpc.name
+  for_each   = toset(var.regions)
+  region     = each.key
+  regions    = var.regions
+  source     = "../../terraform/modules/network"
+  project_id = data.google_project.environment.project_id
+  depends_on = [module.project]
+  vpc_id     = google_compute_network.research-vpc.id
+  vpc_name   = google_compute_network.research-vpc.name
 
 }
 

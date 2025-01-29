@@ -46,7 +46,7 @@ output "subnets" {
   description = "Map of networking resources per region"
   value = {
     for region, network in module.networking : region => {
-      subnet_id           = network.subnet_id
+      subnet_id          = network.subnet_id
       service_range_name = network.service_range_name
       pod_range_name     = network.pod_range_name
     }
@@ -66,8 +66,8 @@ output "parallelstore_instances" {
 output "cluster_service_account" {
   description = "The service account used by GKE clusters"
   value = {
-    email  = google_service_account.cluster_service_account.email
-    id     = google_service_account.cluster_service_account.id
-    name   = google_service_account.cluster_service_account.name
+    email = google_service_account.cluster_service_account.email
+    id    = google_service_account.cluster_service_account.id
+    name  = google_service_account.cluster_service_account.name
   }
 }

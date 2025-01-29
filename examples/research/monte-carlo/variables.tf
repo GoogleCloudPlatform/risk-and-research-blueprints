@@ -39,7 +39,7 @@ variable "regions" {
 variable "clusters_per_region" {
   description = "Map of regions to number of clusters to create in each"
   type        = map(number)
-  default     = {"us-central1"  = 1}
+  default     = { "us-central1" = 1 }
 
   validation {
     condition     = alltrue([for count in values(var.clusters_per_region) : count <= 1])

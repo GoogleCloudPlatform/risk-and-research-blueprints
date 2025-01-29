@@ -54,7 +54,7 @@ locals {
       startswith(key, "run_") ? (
         var.cloudrun_enabled && length(module.cloudrun) > 0 ?
         try(module.cloudrun[0].test_scripts[trimprefix(key, "run_")], null) : null
-      ) : (
+        ) : (
         length(module.gke) > 0 ?
         try(module.gke[module.default_region.default_region].test_scripts[trimprefix(key, "gke_")], null) : null
       )
@@ -92,7 +92,7 @@ locals {
 }
 
 module "default_region" {
-  source = "../../../terraform/modules/region-analysis"
+  source  = "../../../terraform/modules/region-analysis"
   regions = var.regions
 }
 
@@ -116,7 +116,7 @@ module "infrastructure" {
 module "agent" {
   source = "../../../terraform/modules/builder"
 
-  project_id = var.project_id
+  project_id        = var.project_id
   region            = module.default_region.default_region
   repository_region = module.infrastructure.artifact_registry.location
   repository_id     = module.infrastructure.artifact_registry.name
@@ -225,11 +225,11 @@ resource "google_logging_project_sink" "my-sink" {
 }
 
 resource "google_bigquery_dataset" "main" {
-  project    = var.project_id
-  dataset_id = "workload"
-  location   = module.default_region.default_region
+  project                    = var.project_id
+  dataset_id                 = "workload"
+  location                   = module.default_region.default_region
   delete_contents_on_destroy = true
-  
+
   depends_on = [
     module.infrastructure
   ]

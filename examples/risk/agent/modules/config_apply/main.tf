@@ -93,7 +93,7 @@ locals {
         project_id        = var.project_id,
         region            = var.region,
         cluster_name      = var.cluster_name,
-        KUBECONFIG       = "/tmp/kubeconfig_${var.cluster_name}-${var.project_id}.yaml"
+        KUBECONFIG        = "/tmp/kubeconfig_${var.cluster_name}-${var.project_id}.yaml"
     })
   }
 }

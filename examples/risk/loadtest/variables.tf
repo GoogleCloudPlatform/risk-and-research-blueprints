@@ -32,7 +32,7 @@ variable "project_id" {
 variable "clusters_per_region" {
   description = "Map of regions to number of clusters to create in each"
   type        = map(number)
-  default     = {"us-central1"  = 1}
+  default     = { "us-central1" = 1 }
 
   validation {
     condition     = alltrue([for count in values(var.clusters_per_region) : count <= 4])
@@ -88,7 +88,7 @@ variable "parallelstore_enabled" {
 }
 # Deployment type for Parallelstore SCRATCH or PERSISTENT (default: SCRATCH)
 variable "deployment_type" {
-  description = "Parallelstore Instance deployment type" 
+  description = "Parallelstore Instance deployment type"
   type        = string
   default     = "SCRATCH"
 }

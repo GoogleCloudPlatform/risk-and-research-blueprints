@@ -13,7 +13,7 @@
 # limitations under the License.
 
 locals {
-  repository_prefix = "${var.region}-docker.pkg.dev/${var.project_id}/${var.repository_id}"
+  repository_prefix = "${var.repository_region}-docker.pkg.dev/${var.project_id}/${var.repository_id}"
   container_hash = {
     for container, config in var.containers :
     container => sha512(join("", concat([
@@ -70,7 +70,7 @@ resource "google_project_iam_member" "logging_member" {
 
 resource "google_artifact_registry_repository_iam_member" "repository_member" {
   project    = var.project_id
-  location   = var.region
+  location   = var.repository_region
   repository = var.repository_id
   role       = "roles/artifactregistry.admin"
   member     = "serviceAccount:${google_service_account.cloudbuild_actor.email}"

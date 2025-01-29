@@ -17,43 +17,15 @@ data "google_project" "environment" {
   project_id = var.project_id
 }
 
-# Module to manage project-level settings and API enablement
-module "project" {
-  source     = "../../../terraform/modules/project"
-  project_id = data.google_project.environment.project_id
-  region     = var.region
+module "infrastructure" {
+  source                   = "../../infrastructure"
+  project_id               = var.project_id
+  regions                  = var.regions
+  clusters_per_region      = var.clusters_per_region
+  parallelstore_enabled    = var.parallelstore_enabled
 }
 
-# Module to create VPC network and subnets
-module "networking" {
-  source                = "../../../terraform/modules/network"
-  project_id            = data.google_project.environment.project_id
-  region                = var.region
-  depends_on            = [module.project]
-  gke_standard_enabled  = var.gke_standard_enabled
-  gke_autopilot_enabled = var.gke_autopilot_enabled
-}
 
-# Conditionally create a GKE Standard cluster
-module "gke_standard" {
-  count                = var.gke_standard_enabled ? 1 : 0
-  source               = "../../../terraform/modules/gke-standard"
-  project_id           = data.google_project.environment.project_id
-  region               = var.region
-  network              = module.networking.network
-  subnet               = module.networking.subnet-1.id
-  ip_range_services    = module.networking.subnet-1.secondary_ip_range[0].range_name
-  ip_range_pods        = module.networking.subnet-1.secondary_ip_range[1].range_name
-  depends_on           = [module.project, module.networking]
-  scaled_control_plane = var.scaled_control_plane
-  artifact_registry    = module.artifact_registry.artifact_registry
-}
-
-module "artifact_registry" {
-  source     = "../../../terraform/modules/artifact-registry"
-  region     = var.region
-  project_id = data.google_project.environment.project_id
-}
 
 # Example Specific
 # resource "google_storage_bucket" "gkebatch" {

@@ -12,13 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+locals {
+  enable_bq_static = var.bq_dataset != "" && var.bq_routine != ""
+  bq_config        = local.enable_bq_static ? { "enabled" = true } : {}
+}
 
 #
 # Cloud Run BigQuery (generic)
 #
 
 resource "google_cloud_run_v2_service" "workload_worker" {
-  count = local.enable_bq
+  for_each = local.bq_config
 
   name                = "workload-worker-bigquery"
   project             = var.project_id
@@ -119,7 +123,7 @@ resource "google_cloud_run_v2_service" "workload_worker" {
 
 # Create a BigQuery connection (new service account)
 resource "google_bigquery_connection" "gcp_connection" {
-  count = local.enable_bq
+  for_each = local.bq_config
 
   project       = var.project_id
   friendly_name = "BigQuery Remote Defined Function"
@@ -132,12 +136,12 @@ resource "google_bigquery_connection" "gcp_connection" {
 resource "google_cloud_run_service_iam_binding" "bq_to_run_binding" {
   count = local.enable_bq
 
-  project  = google_cloud_run_v2_service.workload_worker[0].project
-  location = google_cloud_run_v2_service.workload_worker[0].location
-  service  = google_cloud_run_v2_service.workload_worker[0].name
+  project  = google_cloud_run_v2_service.workload_worker["enabled"].project
+  location = google_cloud_run_v2_service.workload_worker["enabled"].location
+  service  = google_cloud_run_v2_service.workload_worker["enabled"].name
   role     = "roles/run.invoker"
   members = [
-    "serviceAccount:${google_bigquery_connection.gcp_connection[0].cloud_resource[0].service_account_id}"
+    "serviceAccount:${google_bigquery_connection.gcp_connection["enabled"].cloud_resource[0].service_account_id}"
   ]
 }
 
@@ -157,8 +161,8 @@ resource "google_bigquery_routine" "remote_function" {
   definition_body = ""
 
   remote_function_options {
-    endpoint             = google_cloud_run_v2_service.workload_worker[0].uri
-    connection           = google_bigquery_connection.gcp_connection[0].id
+    endpoint             = google_cloud_run_v2_service.workload_worker["enabled"].uri
+    connection           = google_bigquery_connection.gcp_connection["enabled"].id
     max_batching_rows    = "1"
     user_defined_context = {}
   }

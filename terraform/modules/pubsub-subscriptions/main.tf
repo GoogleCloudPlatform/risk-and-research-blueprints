@@ -17,11 +17,11 @@
 # BigQuery persistence
 #
 
-resource "google_service_account" "bq_write_service_account" {
-  project      = var.project_id
-  account_id   = "pubsub-bigquery-writer"
-  display_name = "BQ Write Service Account"
-}
+# resource "google_service_account" "bq_write_service_account" {
+#   project      = var.project_id
+#   account_id   = "pubsub-bigquery-writer"
+#   display_name = "BQ Write Service Account"
+# }
 
 data "local_file" "pubsub_json_schema" {
   filename = "${path.module}/pubsub_json_schema.txt"
@@ -49,7 +49,8 @@ resource "google_bigquery_table_iam_member" "message_metadata" {
   dataset_id = google_bigquery_table.messages.dataset_id
   table_id   = google_bigquery_table.messages.table_id
   role       = "roles/bigquery.metadataViewer"
-  member     = "serviceAccount:${google_service_account.bq_write_service_account.email}"
+  # member     = "serviceAccount:${google_service_account.bq_write_service_account.email}"
+  member = "serviceAccount:${var.subscriber_service_account}"
 }
 
 # Permission for inserting into the table
@@ -58,7 +59,8 @@ resource "google_bigquery_table_iam_member" "message_editor" {
   dataset_id = google_bigquery_table.messages.dataset_id
   table_id   = google_bigquery_table.messages.table_id
   role       = "roles/bigquery.dataEditor"
-  member     = "serviceAccount:${google_service_account.bq_write_service_account.email}"
+  # member     = "serviceAccount:${google_service_account.bq_write_service_account.email}"
+  member = "serviceAccount:${var.subscriber_service_account}"
 }
 
 
@@ -66,14 +68,14 @@ resource "google_bigquery_table_iam_member" "message_editor" {
 # Want JSON-based PubSub subscriptions.
 #
 
-resource "google_pubsub_topic_iam_member" "topic_subscriber" {
-  for_each = toset(var.topics)
+# resource "google_pubsub_topic_iam_member" "topic_subscriber" {
+#   for_each = toset(var.topics)
 
-  project = var.project_id
-  topic   = each.value
-  role    = "roles/pubsub.subscriber"
-  member  = "serviceAccount:${google_service_account.bq_write_service_account.email}"
-}
+#   project = var.project_id
+#   topic   = each.value
+#   role    = "roles/pubsub.subscriber"
+#   member  = "serviceAccount:${google_service_account.bq_write_service_account.email}"
+# }
 
 resource "google_pubsub_subscription" "bq_sub" {
   for_each = toset(var.topics)
@@ -81,7 +83,7 @@ resource "google_pubsub_subscription" "bq_sub" {
   depends_on = [
     google_bigquery_table_iam_member.message_editor,
     google_bigquery_table_iam_member.message_metadata,
-    google_pubsub_topic_iam_member.topic_subscriber,
+    # google_pubsub_topic_iam_member.topic_subscriber,
   ]
 
   project = var.project_id
@@ -90,7 +92,7 @@ resource "google_pubsub_subscription" "bq_sub" {
 
   bigquery_config {
     table                 = "${google_bigquery_table.messages.project}.${google_bigquery_table.messages.dataset_id}.${google_bigquery_table.messages.table_id}"
-    service_account_email = google_service_account.bq_write_service_account.email
+    service_account_email = var.subscriber_service_account
     write_metadata        = true
   }
 }

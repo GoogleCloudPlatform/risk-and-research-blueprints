@@ -41,3 +41,9 @@ variable "topics" {
   type        = list(string)
   description = "List of topics to persist to BigQuery"
 }
+
+variable "subscriber_service_account" {
+  description = "Service account that will be granted subscriber role on topics"
+  type        = string
+  default     = ""
+}

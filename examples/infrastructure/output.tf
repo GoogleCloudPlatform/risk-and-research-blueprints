@@ -12,24 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-output "network" {
-  description = "network"
-  value       = module.networking.network
-}
-
-output "subnet_1" {
-  description = "Standard Subnet"
-  value       = module.networking.subnet-1
-}
-
-output "subnet_2" {
-  description = "Autopilot Subnet"
-  value       = module.networking.subnet-2
-}
-
-output "cluster_service_account" {
-  description = "Cluster Service Account"
-  value       = google_service_account.cluster_service_account
+output "gke_clusters" {
+  description = "List of GKE cluster names and their regions"
+  value = [
+    for k, cluster in module.gke_standard : {
+      cluster_name = cluster.cluster_name
+      region       = cluster.region
+      endpoint     = cluster.endpoint
+    }
+  ]
 }
 
 output "artifact_registry" {
@@ -38,22 +29,45 @@ output "artifact_registry" {
     url               = module.artifact_registry.artifact_registry_url
     artifact_registry = module.artifact_registry.artifact_registry
     id                = module.artifact_registry.artifact_registry_id
+    location          = module.artifact_registry.artifact_registry_region
   }
 }
 
-output "parallelstore_instance" {
-  value = try(
-    length(module.parallelstore[0].id) > 0 ? {
-      name              = module.parallelstore.name
-      id                = module.parallelstore.id
-      access_points     = module.parallelstore.access_points
-      reserved_ip_range = module.parallelstore.reserved_ip_range
-    } : null,
-    null
-  )
+output "vpc" {
+  description = "The VPC resource being created"
+  value = {
+    id   = google_compute_network.research-vpc.id
+    name = google_compute_network.research-vpc.name
+    mtu  = google_compute_network.research-vpc.mtu
+  }
 }
 
-output "gke_standard_cluster_name" {
-  value = var.gke_standard_cluster_name
-  description = "Name of the GKE Standard Cluster"
+output "subnets" {
+  description = "Map of networking resources per region"
+  value = {
+    for region, network in module.networking : region => {
+      subnet_id           = network.subnet_id
+      service_range_name = network.service_range_name
+      pod_range_name     = network.pod_range_name
+    }
+  }
+}
+
+output "parallelstore_instances" {
+  description = "Map of Parallelstore instances per region"
+  value = {
+    for region, instance in module.parallelstore : region => {
+      name     = instance.name
+      endpoint = instance.endpoint
+    }
+  }
+}
+
+output "cluster_service_account" {
+  description = "The service account used by GKE clusters"
+  value = {
+    email  = google_service_account.cluster_service_account.email
+    id     = google_service_account.cluster_service_account.id
+    name   = google_service_account.cluster_service_account.name
+  }
 }

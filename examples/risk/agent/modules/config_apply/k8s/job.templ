@@ -28,8 +28,8 @@ spec:
         gke-gcsfuse/volumes: "true"
         gke-gcsfuse/cpu-request: "50m"
         gke-gcsfuse/memory-request: "64Mi"
-        gke-gcsfuse/cpu-limit: "200m"
-        gke-gcsfuse/memory-limit: "256Mi"
+        gke-gcsfuse/cpu-limit: "1"
+        gke-gcsfuse/memory-limit: "1Gi"
         gke-gcsfuse/ephemeral-storage-request: "1Gi"
     spec:
       priorityClassName: default-priority
@@ -46,6 +46,7 @@ spec:
             cpu: "900m"
           limits:
             cpu: "1000m"
+            memory: "2Gi"
         volumeMounts:
         - name: gcs-data
           mountPath: /data

@@ -16,48 +16,27 @@ data "google_project" "environment" {
   project_id = var.project_id
 }
 
+# Get available zones for the region
+data "google_compute_zones" "available" {
+  project = var.project_id
+  region  = var.region
+}
+
+# Random zone selection
+resource "random_shuffle" "zone" {
+  input        = data.google_compute_zones.available.names
+  result_count = 1
+}
+
+# Create Parallelstore instance
 resource "google_parallelstore_instance" "parallelstore" {
-  project      = data.google_project.environment.project_id
-  provider     = google-beta
-  instance_id  = "daos-instance"
-  location     = "${var.region}-a"
-  capacity_gib = 12000
-  network      = var.network
+  project         = var.project_id
+  provider        = google-beta
+  instance_id     = "parallelstore-${random_shuffle.zone.result[0]}"
+  location        = random_shuffle.zone.result[0]
+  capacity_gib    = var.deployment_type == "PERSISTENT" ? 24000 : 12000
+  network         = var.network
+  deployment_type = var.deployment_type
   # file_stripe_level = "FILE_STRIPE_LEVEL_MAX"
   # directory_stripe_level = "DIRECTORY_STRIPE_LEVEL_MAX"
-  depends_on = [google_service_networking_connection.default]
-}
-
-# Create an IP address
-resource "google_compute_global_address" "private_ip_alloc" {
-  project       = data.google_project.environment.project_id
-  name          = "address"
-  purpose       = "VPC_PEERING"
-  address_type  = "INTERNAL"
-  prefix_length = 24
-  network       = var.network
-  provider      = google-beta
-}
-
-# Create a private connection
-resource "google_service_networking_connection" "default" {
-  network                 = var.network
-  service                 = "servicenetworking.googleapis.com"
-  reserved_peering_ranges = [google_compute_global_address.private_ip_alloc.name]
-  provider                = google-beta
-}
-
-resource "google_compute_firewall" "allow-parallelstore" {
-  name          = "allow-parallelstore"
-  project       = data.google_project.environment.project_id
-  network       = var.network
-  direction     = "INGRESS"
-  source_ranges = ["${google_compute_global_address.private_ip_alloc.address}/${google_compute_global_address.private_ip_alloc.prefix_length}"]
-
-  allow {
-    protocol = "tcp"
-  }
-  log_config {
-    metadata = "INCLUDE_ALL_METADATA"
-  }
 }

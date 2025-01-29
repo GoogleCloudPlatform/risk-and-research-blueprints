@@ -21,40 +21,62 @@ data "google_project" "environment" {
 module "project" {
   source     = "../../terraform/modules/project"
   project_id = data.google_project.environment.project_id
-  region     = var.region
 }
 
 # Request additional Quota
-module "quota" {
-  count               = var.additional_quota_enabled ? 1 : 0
-  source              = "../../terraform/modules/quota"
-  project_id          = data.google_project.environment.project_id
-  region              = var.region
-  quota_contact_email = var.additional_quota_enabled ? var.quota_contact_email : "null"
-}
+# module "quota" {
+#   count               = var.additional_quota_enabled ? 1 : 0
+#   source              = "../../terraform/modules/quota"
+#   project_id          = data.google_project.environment.project_id
+#   region              = var.region
+#   quota_contact_email = var.additional_quota_enabled ? var.quota_contact_email : "null"
+# }
 
 # Module to create VPC network and subnets
+resource "google_compute_network" "research-vpc" {
+  name                    = "research-vpc"
+  project                 = data.google_project.environment.project_id
+  auto_create_subnetworks = false
+  mtu                     = 8896 # 10% performance gain for Parallelstore
+  # enable_ula_internal_ipv6 = true
+}
+
 module "networking" {
+  for_each              = toset(var.regions)
+  region                = each.key
+  regions               = var.regions
   source                = "../../terraform/modules/network"
   project_id            = data.google_project.environment.project_id
-  region                = var.region
   depends_on            = [module.project]
-  gke_standard_enabled  = var.gke_standard_enabled
-  gke_autopilot_enabled = var.gke_autopilot_enabled
+  vpc_id                = google_compute_network.research-vpc.id
+  vpc_name              = google_compute_network.research-vpc.name
+
 }
 
 # Conditionally create a GKE Standard cluster
 module "gke_standard" {
-  count                   = var.gke_standard_enabled ? 1 : 0
-  cluster_name            = var.gke_standard_cluster_name
-  source                  = "../../terraform/modules/gke-standard"
+  source = "../../terraform/modules/gke-standard"
+  # count                   = var.gke_standard_enabled ? 1 : 0
+  for_each = {
+    for entry in flatten([
+      for region, count in var.clusters_per_region : [
+        for index in range(count) : {
+          key           = "${region}-${index}"
+          region        = region
+          cluster_index = index
+        }
+      ]
+    ]) : entry.key => entry
+  }
+  cluster_index           = each.value.cluster_index
+  cluster_name            = "${var.gke_standard_cluster_name}-${each.value.region}-${each.value.cluster_index}"
   project_id              = data.google_project.environment.project_id
-  region                  = var.region
+  region                  = each.value.region
   zones                   = var.zones
-  network                 = module.networking.network
-  subnet                  = module.networking.subnet-1.id
-  ip_range_services       = module.networking.subnet-1.secondary_ip_range[0].range_name
-  ip_range_pods           = module.networking.subnet-1.secondary_ip_range[1].range_name
+  network                 = google_compute_network.research-vpc.id
+  subnet                  = module.networking[each.value.region].subnet_id
+  ip_range_services       = module.networking[each.value.region].service_range_name
+  ip_range_pods           = module.networking[each.value.region].pod_range_name
   depends_on              = [google_service_account.cluster_service_account, module.project, module.networking]
   scaled_control_plane    = var.scaled_control_plane
   artifact_registry       = module.artifact_registry.artifact_registry
@@ -63,41 +85,60 @@ module "gke_standard" {
   cluster_service_account = google_service_account.cluster_service_account
 }
 
-# Conditionall create a GKE Autpilot cluster
-module "gke_autopilot" {
-  count                   = var.gke_autopilot_enabled ? 1 : 0
-  cluster_name            = var.gke_ap_cluster_name
-  source                  = "../../terraform/modules/gke-autopilot"
-  project_id              = data.google_project.environment.project_id
-  region                  = var.region
-  network                 = module.networking.network
-  subnet                  = module.networking.subnet-2.id
-  ip_range_services       = module.networking.subnet-2.secondary_ip_range[0].range_name
-  ip_range_pods           = module.networking.subnet-2.secondary_ip_range[1].range_name
-  depends_on              = [module.project, module.networking, google_service_account.cluster_service_account]
-  artifact_registry       = module.artifact_registry.artifact_registry
-  cluster_service_account = google_service_account.cluster_service_account
-}
-
 # Create a Parallestore Instance
 module "parallelstore" {
-  count      = var.parallelstore_enabled ? 1 : 0
-  source     = "../../terraform/modules/parallelstore"
-  project_id = data.google_project.environment.project_id
-  region     = var.region
-  network    = module.networking.network
+  for_each        = var.parallelstore_enabled ? toset(var.regions) : []
+  source          = "../../terraform/modules/parallelstore"
+  project_id      = data.google_project.environment.project_id
+  region          = each.key
+  network         = google_compute_network.research-vpc.id
+  deployment_type = var.deployment_type
+  depends_on = [
+    google_service_networking_connection.default
+  ]
 }
 
 # Artifact Registry for Images
 module "artifact_registry" {
   source     = "../../terraform/modules/artifact-registry"
-  region     = var.region
+  regions    = var.regions
   project_id = data.google_project.environment.project_id
 }
 
+# GKE IAM
 # Service Account for clusters
 resource "google_service_account" "cluster_service_account" {
   account_id   = var.cluster_service_account
   display_name = var.cluster_service_account
   project      = data.google_project.environment.project_id
+}
+
+resource "google_project_iam_member" "monitoring_viewer" {
+  project = data.google_project.environment.project_id
+  role    = "roles/container.serviceAgent"
+  member  = "serviceAccount:${google_service_account.cluster_service_account.email}"
+}
+
+resource "google_artifact_registry_repository_iam_member" "artifactregistry_reader" {
+  project    = data.google_project.environment.project_id
+  location   = module.artifact_registry.artifact_registry.location
+  repository = module.artifact_registry.artifact_registry.name
+  role       = "roles/artifactregistry.reader"
+  member     = "serviceAccount:${google_service_account.cluster_service_account.email}"
+}
+
+#Parallelstore Networking
+resource "google_service_networking_connection" "default" {
+  network                 = google_compute_network.research-vpc.id
+  service                 = "servicenetworking.googleapis.com"
+  reserved_peering_ranges = [google_compute_global_address.parallelstore_range.name]
+}
+
+resource "google_compute_global_address" "parallelstore_range" {
+  project       = data.google_project.environment.project_id
+  name          = "parallelstore-range"
+  purpose       = "VPC_PEERING"
+  address_type  = "INTERNAL"
+  prefix_length = 16
+  network       = google_compute_network.research-vpc.id
 }

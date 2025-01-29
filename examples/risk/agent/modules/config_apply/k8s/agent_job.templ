@@ -27,11 +27,11 @@ spec:
         gke-gcsfuse/volumes: "true"
         gke-gcsfuse/cpu-request: "50m"
         gke-gcsfuse/memory-request: "64Mi"
-        gke-gcsfuse/cpu-limit: "200m"
-        gke-gcsfuse/memory-limit: "256Mi"
+        gke-gcsfuse/cpu-limit: "1"
+        gke-gcsfuse/memory-limit: "1Gi"
         gke-gcsfuse/ephemeral-storage-request: "1Gi"
     spec:
-      priorityClassName: default-priority
+      priorityClassName: higher-priority
       nodeSelector:
         cloud.google.com/compute-class: spot-capacity
       initContainers:
@@ -42,10 +42,11 @@ spec:
         workingDir: /data
         resources:
           requests:
-            memory: "1Gi"
-            cpu: "100m"
+            memory: "2Gi"
+            cpu: "1"
           limits:
-            cpu: "250m"
+            cpu: "2"
+            memory: "4Gi"
         volumeMounts:
         - name: gcs-data
           mountPath: /data
@@ -54,10 +55,11 @@ spec:
         image: ${agent_image}
         resources:
           requests:
-            memory: "1Gi"
-            cpu: "100m"
+            memory: "2Gi"
+            cpu: "1"
           limits:
-            cpu: "250m"
+            cpu: "2"
+            memory: "4Gi"
         args: ["serve", "pubsub-pull",
                # subscription to pull requests (tasks) from, topic to publish responses
                "${workload_request_sub}", "${workload_response}",

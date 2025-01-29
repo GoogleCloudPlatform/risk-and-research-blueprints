@@ -17,6 +17,10 @@ output "cluster_name" {
   value       = google_container_cluster.risk-research.name
 }
 
+output "region" {
+  value = var.region
+}
+
 output "endpoint" {
   description = "Cluster Endpoint"
   value       = google_container_cluster.risk-research.control_plane_endpoints_config[0]

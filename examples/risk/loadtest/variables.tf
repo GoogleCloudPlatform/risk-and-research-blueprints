@@ -29,20 +29,38 @@ variable "project_id" {
   }
 }
 
-# Region for resource deployment (default: us-central1)
-variable "region" {
-  type        = string
-  description = "The GCP region to deploy resources to."
-  default     = "us-central1"
+variable "clusters_per_region" {
+  description = "Map of regions to number of clusters to create in each"
+  type        = map(number)
+  default     = {"us-central1"  = 1}
+
+  validation {
+    condition     = alltrue([for count in values(var.clusters_per_region) : count <= 4])
+    error_message = "Maximum 4 clusters per region allowed"
+  }
 }
 
-# Zones for resource deployment (default: us-central1 [a-d])
-variable "zones" {
+
+variable "regions" {
+  description = "List of regions where GKE clusters should be created"
   type        = list(string)
-  description = "The GCP zones to deploy resources to."
-  default     = ["a", "b", "c"]
+  default     = ["us-central1"]
+
+  validation {
+    condition     = length(var.regions) <= 4
+    error_message = "Maximum 4 regions supported"
+  }
 }
 
+#
+# Enable / Disable Cloud Run
+#
+
+variable "cloudrun_enabled" {
+  description = "Enable Cloud Run deployment"
+  type        = bool
+  default     = true
+}
 
 #
 # Optional configuration
@@ -68,19 +86,11 @@ variable "parallelstore_enabled" {
   description = "Enable or disable the deployment of Parallelstore."
   default     = false
 }
-
-# Enable/disable GKE Standard cluster deployment (default: true)
-variable "gke_standard_enabled" {
-  type        = bool
-  description = "Enable or disable the deployment of a GKE Standard cluster."
-  default     = true
-}
-
-# Enable/disable GKE Autopilot cluster deployment (default: false)
-variable "gke_autopilot_enabled" {
-  type        = bool
-  description = "Enable or disable the deployment of a GKE Autopilot cluster."
-  default     = false
+# Deployment type for Parallelstore SCRATCH or PERSISTENT (default: SCRATCH)
+variable "deployment_type" {
+  description = "Parallelstore Instance deployment type" 
+  type        = string
+  default     = "SCRATCH"
 }
 
 # Enable/disable initial deployment of a large nodepool for control plane nodes (default: false)

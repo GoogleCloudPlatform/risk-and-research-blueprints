@@ -34,8 +34,8 @@ variable "network" {
   default     = "default"
 }
 
-variable "subnet" {
-  description = "The subnet the cluster should be deployed to"
+variable "deployment_type" {
+  description = "Parallelstore Instance deployment type" # SCRATCH or PERSISTENT
   type        = string
-  default     = "default"
+  default     = "SCRATCH"
 }

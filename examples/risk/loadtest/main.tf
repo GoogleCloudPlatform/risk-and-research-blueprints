@@ -22,7 +22,7 @@ locals {
     ["writedata", "--logJSON", "--showProgress=false", "--size", "1048576", "--parallel", "20", "--count", "5", "/data/read_dir/small-low"],
     ["gentasks", "--logJSON", "--count=10000", "--initMinMicros=1000000", "--minMicros=1000000", "--initReadDir=/data/read_dir/small", "/data/tasks/10k_1s_1s_read_small.jsonl.gz"],
     ["gentasks", "--logJSON", "--count=1000", "--initMinMicros=1000000", "--minMicros=1000000", "--initReadDir=/data/read_dir/small", "/data/tasks/1k_1s_1s_read_small.jsonl.gz"],
-    ["gentasks", "--logJSON", "--count=100000", "--initMinMicros=10000000", "--minMicros=20000000", "--minMicros=35000000", "--initReadDir=/data/read_dir/small-low", "/data/tasks/100k_1s_3s_read_5_small.jsonl.gz"],
+    ["gentasks", "--logJSON", "--count=5000000", "--initMinMicros=30000000", "--minMicros=240000000", "--minMicros=360000000", "--initReadDir=/data/read_dir/small-low", "/data/tasks/5m_30s_360s_read_5_small.jsonl.gz"],
   ]
   test_configs = [
     { name = "hpa_1k_1s_s_read_small", testfile = "/data/tasks/1k_1s_1s_read_small.jsonl.gz", parallel = 0, description = "Autoscaling workers, 1 second compute and small folder read on initialization, 1,000 tasks for 1 second task compute." },
@@ -34,39 +34,52 @@ locals {
     { name = "10_10k_1s_s_read_small", testfile = "/data/tasks/10k_1s_1s_read_small.jsonl.gz", parallel = 10, description = "10 workers, 1 second compute and small folder read on initialization, 10,000 tasks for 1 second compute." },
     { name = "100_10k_1s_s_read_small", testfile = "/data/tasks/10k_1s_1s_read_small.jsonl.gz", parallel = 100, description = "100 workers, 1 second compute and small folder read on initialization, 10,000 tasks for 1 second compute." },
     { name = "500_10k_1s_s_read_small", testfile = "/data/tasks/10k_1s_1s_read_small.jsonl.gz", parallel = 500, description = "500 workers, 1 second compute and small folder read on initialization, 10,000 tasks for 1 second compute." },
-    { name = "30000_100k_10s_s_read_small", testfile = "/data/tasks/100k_1s_3s_read_5_small.jsonl.gz", parallel = 30000, description = "30000 workers, 10 second compute and small folder read on initialization, 100,000 tasks for 20-35 seconds of compute." },
+    { name = "30000_5m_10s_s_read_small", testfile = "/data/tasks/5m_1s_3s_read_5_small.jsonl.gz", parallel = 30000, description = "30000 workers, 10 second compute and small folder read on initialization, 5 million tasks for 20-35 seconds of compute." },
+    { name = "hpa_5m_360s_s_read_small", testfile = "/data/tasks/5m_30s_360s_read_5_small.jsonl.gz", parallel = 0, description = "Autoscaling workers, 10 second compute and small folder read on initialization, 5 million tasks for 20-35 second compute." },
   ]
   test_configs_dict = {
     for config in local.test_configs :
     config.name => config
   }
-  local_test_scripts = merge(
-    length(module.cloudrun) == 0 ? {} : {
-      for key, script in module.cloudrun[0].test_scripts :
-      "run_${key}.sh" => script
-    },
-    length(module.gke) == 0 ? {} : {
-      for key, script in module.gke[0].test_scripts :
-      "gke_${key}.sh" => script
-  })
+
+  test_script_keys = flatten([
+    for config in local.test_configs : [
+      "run_${config.name}.sh",
+      "gke_${config.name}.sh"
+    ]
+  ])
+
+  local_test_scripts = {
+    for key in local.test_script_keys : key => (
+      startswith(key, "run_") ? (
+        var.cloudrun_enabled && length(module.cloudrun) > 0 ?
+        try(module.cloudrun[0].test_scripts[trimprefix(key, "run_")], null) : null
+      ) : (
+        length(module.gke) > 0 ?
+        try(module.gke[module.default_region.default_region].test_scripts[trimprefix(key, "gke_")], null) : null
+      )
+    )
+  }
+
   ui_config_file = yamlencode({
     "project_id" : var.project_id,
-    "region" : var.region,
+    "region" : module.default_region.default_region,
     "pubsub_summary_table" : "${google_bigquery_table.messages_summary.project}.${google_bigquery_table.messages_summary.dataset_id}.${google_bigquery_table.messages_summary.table_id}",
     "urls" : {
-      "dashboard" = module.gke[0].monitoring_dashboard_url
-      "cluster"   = module.gke[0].cluster_url
+      "dashboard" = module.gke.monitoring_dashboard_url
+      "cluster"   = module.gke.cluster_urls
     },
     "tasks" : concat(
       length(module.gke) == 0 ? [] : [
         for config in local.test_configs : {
-          "name"        = "GKE ${config.name}",
-          "script"      = module.gke[0].test_scripts[config.name],
+          "name" = "GKE ${config.name}",
+          # "script"      = module.gke.first_test_script[config.name],
+          "script"      = module.gke.test_scripts_list[0],
           "parallel"    = config.parallel,
           "description" = config.description,
         }
       ],
-      length(module.cloudrun) == 0 ? [] : [
+      (!var.cloudrun_enabled || length(module.cloudrun) == 0) ? [] : [
         for config in local.test_configs : {
           "name"        = "Cloud Run ${config.name}",
           "script"      = module.cloudrun[0].test_scripts[config.name],
@@ -78,16 +91,21 @@ locals {
   })
 }
 
+module "default_region" {
+  source = "../../../terraform/modules/region-analysis"
+  regions = var.regions
+}
+
 module "infrastructure" {
-  source = "../../infrastructure"
-  project_id           = var.project_id
-  region               = var.region
-  gke_standard_enabled = var.gke_standard_enabled
-  gke_autopilot_enabled = var.gke_autopilot_enabled
-  parallelstore_enabled = var.parallelstore_enabled
-  scaled_control_plane = var.scaled_control_plane
-  cluster_max_cpus     = var.cluster_max_cpus
-  cluster_max_memory   = var.cluster_max_memory
+  source                   = "../../infrastructure"
+  project_id               = var.project_id
+  regions                  = var.regions
+  clusters_per_region      = var.clusters_per_region
+  parallelstore_enabled    = var.parallelstore_enabled
+  deployment_type          = var.deployment_type
+  scaled_control_plane     = var.scaled_control_plane
+  cluster_max_cpus         = var.cluster_max_cpus
+  cluster_max_memory       = var.cluster_max_memory
   additional_quota_enabled = var.additional_quota_enabled
 }
 
@@ -98,9 +116,10 @@ module "infrastructure" {
 module "agent" {
   source = "../../../terraform/modules/builder"
 
-  project_id    = var.project_id
-  region        = var.region
-  repository_id = module.infrastructure.artifact_registry.name
+  project_id = var.project_id
+  region            = module.default_region.default_region
+  repository_region = module.infrastructure.artifact_registry.location
+  repository_id     = module.infrastructure.artifact_registry.name
 
 
   containers = {
@@ -123,12 +142,11 @@ module "agent" {
 
 module "cloudrun" {
   source = "../agent/modules/run"
-  # TODO: Mark this part of a count and optional.
-  count = 1
+  count  = var.cloudrun_enabled ? 1 : 0
   # var.bq_dataset is defined?
 
   project_id  = var.project_id
-  region      = var.region
+  region      = module.default_region.default_region
   agent_image = module.agent.status["agent"].image
 
   # Cloud Run specific options
@@ -149,21 +167,14 @@ module "cloudrun" {
 
 module "gke" {
   source     = "../agent/modules/gke"
-  zones      = var.zones
   depends_on = [module.infrastructure]
 
-  # TODO: Mark this part of a count and optional.
-  count = 1
-  # var.zones, gke_standard_enabled, gke_autopilot_enabled result in count
-
   project_id  = var.project_id
-  region      = var.region
+  regions     = var.regions
   agent_image = module.agent.status["agent"].image
 
   # GKE specific options
-  gke_standard_enabled  = var.gke_standard_enabled
-  gke_autopilot_enabled = var.gke_autopilot_enabled
-  cluster_name = module.infrastructure.gke_standard_cluster_name
+  gke_clusters = module.infrastructure.gke_clusters
 
   # Workload options
   # TODO: Other configuration for the workload - needs to be standardized
@@ -183,9 +194,12 @@ module "gke" {
 # To be put into an *agent* module...
 resource "google_logging_project_bucket_config" "analytics-enabled-bucket" {
   project          = var.project_id
-  location         = var.region
+  location         = module.default_region.default_region
   enable_analytics = true
   bucket_id        = "applogs"
+  lifecycle {
+    ignore_changes = [project]
+  }
 }
 
 resource "google_logging_linked_dataset" "logging_linked_dataset" {
@@ -213,7 +227,9 @@ resource "google_logging_project_sink" "my-sink" {
 resource "google_bigquery_dataset" "main" {
   project    = var.project_id
   dataset_id = "workload"
-  location   = var.region
+  location   = module.default_region.default_region
+  delete_contents_on_destroy = true
+  
   depends_on = [
     module.infrastructure
   ]
@@ -225,9 +241,10 @@ resource "google_bigquery_dataset" "main" {
 
 # Create an abstraction across Cloud Run Jobs, Cloud Run Services, and K8S pods
 resource "google_bigquery_table" "log_stats" {
-  project    = var.project_id
-  dataset_id = google_bigquery_dataset.main.dataset_id
-  table_id   = "log_stats"
+  project             = var.project_id
+  dataset_id          = google_bigquery_dataset.main.dataset_id
+  table_id            = "log_stats"
+  deletion_protection = false
 
   view {
     query = templatefile(
@@ -241,9 +258,10 @@ resource "google_bigquery_table" "log_stats" {
 
 # Collect agent statistics
 resource "google_bigquery_table" "agent_stats" {
-  project    = var.project_id
-  dataset_id = google_bigquery_dataset.main.dataset_id
-  table_id   = "agent_stats"
+  project             = var.project_id
+  dataset_id          = google_bigquery_dataset.main.dataset_id
+  table_id            = "agent_stats"
+  deletion_protection = false
 
   view {
     query = templatefile(
@@ -258,9 +276,10 @@ resource "google_bigquery_table" "agent_stats" {
 
 # Summarise agent statistics by instance
 resource "google_bigquery_table" "agent_summary_by_instance" {
-  project    = var.project_id
-  dataset_id = google_bigquery_dataset.main.dataset_id
-  table_id   = "agent_summary_by_instance"
+  project             = var.project_id
+  dataset_id          = google_bigquery_dataset.main.dataset_id
+  table_id            = "agent_summary_by_instance"
+  deletion_protection = false
 
   view {
     query = templatefile(
@@ -279,28 +298,47 @@ resource "google_bigquery_table" "agent_summary_by_instance" {
 #
 # All message are assumed to be JSON and captured in a JSON data element
 module "bigquery_capture" {
-  source           = "../../../terraform/modules/pubsub-subscriptions"
-  project_id       = var.project_id
-  region           = var.region
-  bigquery_dataset = google_bigquery_dataset.main.dataset_id
-  bigquery_table   = "pubsub_messages"
+  source                     = "../../../terraform/modules/pubsub-subscriptions"
+  project_id                 = var.project_id
+  region                     = module.default_region.default_region
+  bigquery_dataset           = google_bigquery_dataset.main.dataset_id
+  bigquery_table             = "pubsub_messages"
+  subscriber_service_account = google_service_account.bq_write_service_account.email
   topics = concat(
-    length(module.cloudrun) > 0 ? module.cloudrun[0].topics : [],
-  length(module.gke) > 0 ? module.gke[0].topics : [])
+    var.cloudrun_enabled && length(module.cloudrun) > 0 ? module.cloudrun[0].topics : [],
+    length(module.gke) > 0 ? module.gke.topics : []
+  )
 }
 
+resource "google_pubsub_topic_iam_member" "topic_subscriber" {
+  for_each = toset(concat(
+    var.cloudrun_enabled && length(module.cloudrun) > 0 ? module.cloudrun[0].topics : [],
+    length(module.gke) > 0 ? module.gke.topics : []
+  ))
+
+  project = var.project_id
+  topic   = each.value
+  role    = "roles/pubsub.subscriber"
+  member  = "serviceAccount:${google_service_account.bq_write_service_account.email}"
+}
+
+resource "google_service_account" "bq_write_service_account" {
+  project      = var.project_id
+  account_id   = "pubsub-bigquery-writer"
+  display_name = "BQ Write Service Account"
+}
 
 #
 # Quota Requests
 #
 
-module "quota" {
-  count               = var.additional_quota_enabled ? 1 : 0
-  source              = "../../../terraform/modules/quota"
-  region              = var.region
-  quota_contact_email = var.quota_contact_email
-  project_id          = var.project_id
-}
+# module "quota" {
+#   count               = var.additional_quota_enabled ? 1 : 0
+#   source              = "../../../terraform/modules/quota"
+#   region              = var.region
+#   quota_contact_email = var.quota_contact_email
+#   project_id          = var.project_id
+# }
 
 #
 # Create views for Data Studio
@@ -308,9 +346,10 @@ module "quota" {
 
 # Pub/Sub messages joined by request/response
 resource "google_bigquery_table" "messages_joined" {
-  project    = var.project_id
-  dataset_id = google_bigquery_dataset.main.dataset_id
-  table_id   = "pubsub_messages_joined"
+  project             = var.project_id
+  dataset_id          = google_bigquery_dataset.main.dataset_id
+  table_id            = "pubsub_messages_joined"
+  deletion_protection = false
 
   view {
     query = templatefile(
@@ -329,9 +368,10 @@ resource "google_bigquery_table" "messages_joined" {
 
 # Pub/Sub summary by job
 resource "google_bigquery_table" "messages_summary" {
-  project    = var.project_id
-  dataset_id = google_bigquery_dataset.main.dataset_id
-  table_id   = "pubsub_messages_summary"
+  project             = var.project_id
+  dataset_id          = google_bigquery_dataset.main.dataset_id
+  table_id            = "pubsub_messages_summary"
+  deletion_protection = false
 
   view {
     query = templatefile(
@@ -353,11 +393,23 @@ resource "google_bigquery_table" "messages_summary" {
 # UI Configuration and scripts
 #
 
-# Create test scripts
 resource "local_file" "test_scripts" {
-  for_each = (var.scripts_output == "") ? {} : local.local_test_scripts
+  for_each = (var.scripts_output == "") ? {} : {
+    for config in local.test_configs : "gke_${config.name}.sh" => join("\n\n",
+      [for script in module.gke.test_scripts_list : script if strcontains(script, replace(config.name, "_", "-"))]
+    ) if length(module.gke) > 0
+  }
   filename = "${var.scripts_output}/${each.key}"
   content  = each.value
+}
+
+resource "local_file" "test_scripts_cloudrun" {
+  for_each = (var.scripts_output == "" || !var.cloudrun_enabled) ? {} : {
+    for k, v in module.cloudrun[0].test_scripts : "run_${k}.sh" => v
+    if length(module.cloudrun) > 0
+  }
+  content  = each.value
+  filename = "${var.scripts_output}/${each.key}"
 }
 
 # Create UI config file
@@ -372,9 +424,10 @@ module "ui_image" {
 
   source = "../../../terraform/modules/builder"
 
-  project_id    = var.project_id
-  region        = var.region
-  repository_id = module.infrastructure.artifact_registry.name
+  project_id        = var.project_id
+  region            = module.default_region.default_region
+  repository_region = module.infrastructure.artifact_registry.location
+  repository_id     = module.infrastructure.artifact_registry.name
 
   containers = {
     ui = {

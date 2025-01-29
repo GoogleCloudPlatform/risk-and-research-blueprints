@@ -23,18 +23,14 @@ variable "project_id" {
   description = "The GCP project ID where resources will be created."
 }
 
-variable "regions" {
-  description = "List of regions where GKE clusters should be created"
-  type        = list(string)
-  default     = ["us-central1"]
+# Region where the build and artifact repository is
+variable "region" {
+  type        = string
+  description = "The Region of the build"
 }
 
-variable "gke_clusters" {
-  description = "List of GKE cluster configurations containing cluster name and region"
-  type = list(object({
-    cluster_name = string
-    region       = string
-  }))
+variable "cluster_name" {
+  type    = string
 }
 
 # Containers to build
@@ -59,9 +55,16 @@ variable "workload_args" {
   type = list(string)
 }
 
-variable "dashboard" {
-  type    = string
-  default = "dashboards/risk-platform-overview.json"
+variable "gcs_bucket" {
+  type = string
+}
+
+variable "pubsub_hpa_request" {
+  type = string
+}
+
+variable "pubsub_job_request" {
+  type = string
 }
 
 #
@@ -84,7 +87,6 @@ variable "workload_init_args" {
   default     = []
   description = "Workload initialization arguments to run"
 }
-
 
 #
 # Naming defaults

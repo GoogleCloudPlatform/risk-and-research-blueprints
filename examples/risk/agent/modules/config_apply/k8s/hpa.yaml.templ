@@ -18,7 +18,7 @@ metadata:
   name: ${name}
 spec:
   minReplicas: 1
-  maxReplicas: 30000
+  maxReplicas: 50000
   metrics:
   - external:
       metric:
@@ -52,8 +52,10 @@ spec:
         app: ${name}
       annotations:
         gke-gcsfuse/volumes: "true"
-        gke-gcsfuse/cpu-request: "0"
-        gke-gcsfuse/memory-request: "0"
+        gke-gcsfuse/cpu-request: "50m"
+        gke-gcsfuse/memory-request: "64Mi"
+        gke-gcsfuse/cpu-limit: "1"
+        gke-gcsfuse/memory-limit: "1Gi"
         gke-gcsfuse/ephemeral-storage-request: "1Gi"
     spec:
       nodeSelector:
@@ -72,16 +74,18 @@ spec:
             cpu: "100m"
           limits:
             cpu: "250m"
+            memory: "1Gi"
         volumeMounts:
         - name: gcs-data
           mountPath: /data
       - name: agent
         resources:
           requests:
-            memory: "1Gi"
-            cpu: "100m"
+            memory: "3Gi"
+            cpu: "900m"
           limits:
-            cpu: "250m"
+            cpu: "3900m"
+            memory: "7Gi"
         image: ${agent_image}
         args: ["serve", "pubsub-pull",
                # subscription to pull requests (tasks) from, topic to publish responses

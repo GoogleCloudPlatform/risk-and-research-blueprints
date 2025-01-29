@@ -12,12 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-locals {
-  zones = flatten([for zone in var.zones : [for letter in split(",", zone) : "${var.region}-${letter}"]])
-}
-
 data "google_project" "environment" {
   project_id = var.project_id
+}
+
+data "google_compute_regions" "available" {
+  project = data.google_project.environment.project_id
+}
+
+# Get available zones for the region
+data "google_compute_zones" "available" {
+  project = data.google_project.environment.project_id
+  region  = var.region
+}
+
+# Random zone selection
+resource "random_shuffle" "zone" {
+  input        = data.google_compute_zones.available.names
+  result_count = 3
 }
 
 resource "google_container_cluster" "risk-research" {
@@ -27,7 +39,8 @@ resource "google_container_cluster" "risk-research" {
   project             = var.project_id
   location            = var.region
   datapath_provider   = "ADVANCED_DATAPATH"
-  node_locations      = local.zones
+  node_locations      = [random_shuffle.zone.result[0], random_shuffle.zone.result[1], random_shuffle.zone.result[2]]
+  depends_on          = [google_kms_crypto_key_iam_member.gke_crypto_key]
 
   # We do this to ensure we have large control plane nodes created initially
   initial_node_count       = var.scaled_control_plane ? 700 : 1
@@ -60,7 +73,7 @@ resource "google_container_cluster" "risk-research" {
   private_cluster_config {
     enable_private_nodes    = true
     enable_private_endpoint = false
-    master_ipv4_cidr_block  = "172.16.0.32/28"
+    master_ipv4_cidr_block  = cidrsubnet("100.64.0.0/16", 12, index(data.google_compute_regions.available.names, var.region) * 4 + var.cluster_index) # /28 blocks index
     # TODO - Enabled for easier testing
     master_global_access_config {
       enabled = true
@@ -146,7 +159,7 @@ resource "google_container_cluster" "risk-research" {
 
   addons_config {
     gcp_filestore_csi_driver_config {
-      enabled = false
+      enabled = true
     }
     gcs_fuse_csi_driver_config {
       enabled = true
@@ -264,7 +277,7 @@ resource "google_container_node_pool" "primary_ondemand_nodes" {
   project        = var.project_id
   location       = var.region
   cluster        = google_container_cluster.risk-research.name
-  node_locations = local.zones
+  node_locations = [random_shuffle.zone.result[0], random_shuffle.zone.result[1], random_shuffle.zone.result[2]]
 
   autoscaling {
     location_policy      = "ANY"
@@ -328,7 +341,7 @@ resource "google_container_node_pool" "primary_spot_nodes" {
   project        = var.project_id
   location       = var.region
   cluster        = google_container_cluster.risk-research.name
-  node_locations = local.zones
+  node_locations = [random_shuffle.zone.result[0], random_shuffle.zone.result[1], random_shuffle.zone.result[2]]
 
   autoscaling {
     location_policy      = "ANY"
@@ -384,20 +397,6 @@ resource "google_container_node_pool" "primary_spot_nodes" {
   }
 }
 
-resource "google_project_iam_member" "monitoring_viewer" {
-  project = data.google_project.environment.project_id
-  role    = "roles/container.serviceAgent"
-  member  = "serviceAccount:${var.cluster_service_account.email}"
-}
-
-resource "google_artifact_registry_repository_iam_member" "artifactregistry_reader" {
-  project    = data.google_project.environment.project_id
-  location   = var.artifact_registry.location
-  repository = var.artifact_registry.name
-  role       = "roles/artifactregistry.reader"
-  member     = "serviceAccount:${var.cluster_service_account.email}"
-}
-
 # KMS for Encryption
 
 resource "random_string" "random" {
@@ -407,13 +406,13 @@ resource "random_string" "random" {
 }
 
 resource "google_kms_key_ring" "gke-keyring" {
-  name     = "gke-keyring-${random_string.random.id}"
+  name     = "${var.cluster_name}-${random_string.random.id}"
   project  = data.google_project.environment.project_id
   location = var.region
 }
 
 resource "google_kms_crypto_key" "gke-key" {
-  name            = "gke-key"
+  name            = "${var.cluster_name}-key"
   key_ring        = google_kms_key_ring.gke-keyring.id
   rotation_period = "7776000s"
   purpose         = "ENCRYPT_DECRYPT"

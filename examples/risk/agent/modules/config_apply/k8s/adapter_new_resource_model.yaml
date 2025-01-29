@@ -102,6 +102,7 @@ spec:
         kubernetes.io/cluster-service: "true"
     spec:
       serviceAccountName: custom-metrics-stackdriver-adapter
+      priorityClassName: higher-priority
       containers:
       - image: gcr.io/gke-release/custom-metrics-stackdriver-adapter:v0.15.1-gke.0
         imagePullPolicy: Always

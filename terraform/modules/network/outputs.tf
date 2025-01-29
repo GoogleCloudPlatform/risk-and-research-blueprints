@@ -12,25 +12,51 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-output "network" {
-  description = "network"
-  value       = google_compute_network.research-vpc.id
+output "subnet_id" {
+  description = "ID of the created subnet"
+  value       = google_compute_subnetwork.subnet.id
 }
 
-output "subnet-1" {
-  description = "Standard Subnet"
-  value = length(google_compute_subnetwork.cluster-1) > 0 ? {
-    name               = google_compute_subnetwork.cluster-1[0].name
-    id                 = google_compute_subnetwork.cluster-1[0].id
-    secondary_ip_range = google_compute_subnetwork.cluster-1[0].secondary_ip_range
-  } : null
+output "subnet_name" {
+  description = "Name of the created subnet"
+  value       = google_compute_subnetwork.subnet.name
 }
 
-output "subnet-2" {
-  description = "Standard Subnet"
-  value = length(google_compute_subnetwork.cluster-2) > 0 ? {
-    name               = google_compute_subnetwork.cluster-2[0].name
-    id                 = google_compute_subnetwork.cluster-2[0].id
-    secondary_ip_range = google_compute_subnetwork.cluster-2[0].secondary_ip_range
-  } : null
+output "pod_range_name" {
+  description = "Name of the pods secondary range"
+  value       = "pods-range-${var.region}"
 }
+
+output "service_range_name" {
+  description = "Name of the services secondary range"
+  value       = "services-range-${var.region}"
+}
+
+output "nat_ip" {
+  description = "NAT IP addresses"
+  value       = google_compute_router_nat.nat.nat_ips
+}
+
+output "router_id" {
+  description = "Cloud Router ID"
+  value       = google_compute_router.router.id
+}
+
+
+# output "subnet-1" {
+#   description = "Standard Subnet"
+#   value = length(google_compute_subnetwork.cluster-1) > 0 ? {
+#     name               = google_compute_subnetwork.cluster-1[0].name
+#     id                 = google_compute_subnetwork.cluster-1[0].id
+#     secondary_ip_range = google_compute_subnetwork.cluster-1[0].secondary_ip_range
+#   } : null
+# }
+
+# output "subnet-2" {
+#   description = "Standard Subnet"
+#   value = length(google_compute_subnetwork.cluster-2) > 0 ? {
+#     name               = google_compute_subnetwork.cluster-2[0].name
+#     id                 = google_compute_subnetwork.cluster-2[0].id
+#     secondary_ip_range = google_compute_subnetwork.cluster-2[0].secondary_ip_range
+#   } : null
+# }

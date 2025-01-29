@@ -25,33 +25,41 @@ variable "project_id" {
   }
 }
 
-# Region for resource deployment (default: us-central1)
-variable "region" {
-  type        = string
-  description = "The GCP region to deploy resources to."
-  default     = "us-central1"
+variable "regions" {
+  description = "List of regions where GKE clusters should be created"
+  type        = list(string)
+  default     = ["us-central1"]
+
+  validation {
+    condition     = length(var.regions) <= 1
+    error_message = "This example supports a single region"
+  }
 }
 
+variable "clusters_per_region" {
+  description = "Map of regions to number of clusters to create in each"
+  type        = map(number)
+  default     = {"us-central1"  = 1}
+
+  validation {
+    condition     = alltrue([for count in values(var.clusters_per_region) : count <= 1])
+    error_message = "This example supports a single cluster"
+  }
+}
 # Enable/disable Parallelstore deployment (default: false)
 variable "parallelstore_enabled" {
   type        = bool
   description = "Enable or disable the deployment of Parallelstore."
   default     = false
 }
-
-# Enable/disable GKE Standard cluster deployment (default: true)
-variable "gke_standard_enabled" {
-  type        = bool
-  description = "Enable or disable the deployment of a GKE Standard cluster."
-  default     = true
+# Deployment type for Parallelstore SCRATCH or PERSISTENT (default: SCRATCH)
+variable "deployment_type" {
+  description = "Parallelstore Instance deployment type"
+  type        = string
+  default     = "SCRATCH"
 }
 
-# Enable/disable GKE Autopilot cluster deployment (default: false)
-variable "gke_autopilot_enabled" {
-  type        = bool
-  description = "Enable or disable the deployment of a GKE Autopilot cluster."
-  default     = false
-}
+
 # Enable/disable initial deployment of a large nodepool for control plane nodes (default: false)
 variable "scaled_control_plane" {
   type        = bool

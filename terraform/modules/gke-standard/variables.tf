@@ -31,7 +31,6 @@ variable "region" {
 variable "zones" {
   description = "The zones for cluster nodes"
   type        = list(string)
-  default     = ["a", "b", "c"]
 }
 
 variable "network" {
@@ -94,4 +93,14 @@ variable "cluster_max_memory" {
   type        = number
   default     = 80000
   description = "Max memory in cluster autoscaling resource limits"
+}
+
+variable "cluster_index" {
+  description = "Index of this cluster within its region (0-3)"
+  type        = number
+
+  validation {
+    condition     = var.cluster_index >= 0 && var.cluster_index < 4
+    error_message = "cluster_index must be between 0 and 3"
+  }
 }

@@ -28,10 +28,15 @@ variable "project_id" {
 }
 
 # Region for resource deployment (default: us-central1)
-variable "region" {
-  type        = string
-  description = "The GCP region to deploy resources to."
-  default     = "us-central1"
+variable "regions" {
+  description = "List of regions where GKE clusters should be created"
+  type        = list(string)
+  default     = ["us-central1"]
+
+  validation {
+    condition     = length(var.regions) <= 4
+    error_message = "Maximum 4 regions supported"
+  }
 }
 
 # Zones for resource deployment (default: us-central1 [a-d])
@@ -58,11 +63,16 @@ variable "quota_contact_email" {
 
 # GKE Standard
 
-# Enable/disable GKE Standard cluster deployment (default: true)
-variable "gke_standard_enabled" {
-  type        = bool
-  description = "Enable or disable the deployment of a GKE Standard cluster."
-  default     = true
+# Number of GKE Standard Clusters per region
+variable "clusters_per_region" {
+  description = "Map of regions to number of clusters to create in each"
+  type        = map(number)
+  default     = {"us-central1"  = 1}
+
+  validation {
+    condition     = alltrue([for count in values(var.clusters_per_region) : count <= 4])
+    error_message = "Maximum 4 clusters per region allowed"
+  }
 }
 
 # GKE Standard cluster name
@@ -93,21 +103,6 @@ variable "cluster_max_memory" {
   description = "Max memory in cluster autoscaling resource limits"
 }
 
-# GKE Autopilot
-
-# Enable/disable GKE Autopilot cluster deployment (default: false)
-variable "gke_autopilot_enabled" {
-  type        = bool
-  description = "Enable or disable the deployment of a GKE Autopilot cluster."
-  default     = false
-}
-
-# GKE Autopilot cluster name
-variable "gke_ap_cluster_name" {
-  type        = string
-  description = "Name of GKE cluster"
-  default     = "gke-ap-risk-research"
-}
 
 # Parallelstore
 
@@ -117,6 +112,13 @@ variable "parallelstore_enabled" {
   description = "Enable or disable the deployment of Parallelstore."
   default     = false
 }
+
+variable "deployment_type" {
+  description = "Parallelstore Instance deployment type" # SCRATCH or PERSISTENT
+  type        = string
+  default     = "SCRATCH"
+}
+
 
 # Artifact Registry
 

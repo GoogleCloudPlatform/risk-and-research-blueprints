@@ -29,10 +29,8 @@ This Terraform example demonstrates how to deploy a Parallelstore instance along
 2. **Configure Variables:**
    *  Update `variables.tfvars` with your desired values:
       *   `project_id`: Your Google Cloud project ID.
-      *   `region`: The desired region for deployment (e.g., `us-central1`).
+      *   `regions`: The desired region for deployment (e.g., `["us-central1"]`).
       *   `parallelstore_enabled`: Set to `true` to deploy Parallelstore.
-      *   `gke_standard_enabled`: Set to `true` to deploy a GKE Standard cluster.
-      *   `gke_autopilot_enabled`: Set to `true` to deploy a GKE Autopilot cluster.
       *   (Optional): `quota_contact_email`: Your contact email for quota requests.
 
 3. **Deploy with Terraform:**

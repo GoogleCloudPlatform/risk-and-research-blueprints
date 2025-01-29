@@ -172,6 +172,13 @@ resource "google_project_service" "pubsub_googleapis_com" {
   service                    = "pubsub.googleapis.com"
 }
 
+resource "google_project_service" "sts_googleapis_com" {
+  disable_dependent_services = false
+  disable_on_destroy         = false
+  project                    = var.project_id
+  service                    = "sts.googleapis.com"
+}
+
 # Log Analytics
 
 resource "google_logging_project_bucket_config" "all_analytics_enabled_bucket" {
@@ -180,6 +187,9 @@ resource "google_logging_project_bucket_config" "all_analytics_enabled_bucket" {
   location         = "global"
   enable_analytics = true
   bucket_id        = "_Default"
+  lifecycle {
+    ignore_changes = [project]
+  }
 }
 
 resource "google_logging_linked_dataset" "all_logging_linked_dataset" {

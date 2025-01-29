@@ -14,7 +14,7 @@
 
 output "artifact_registry_url" {
   description = "Address of the remote repository."
-  value       = "${var.region}-docker.pkg.dev/${data.google_project.environment.project_id}/${google_artifact_registry_repository.research-images.name}"
+  value       = "${module.region_analysis.dominant_region}-docker.pkg.dev/${data.google_project.environment.project_id}/${google_artifact_registry_repository.research-images.name}"
 }
 
 output "artifact_registry" {
@@ -24,5 +24,10 @@ output "artifact_registry" {
 
 output "artifact_registry_id" {
   description = "ID of remote repository"
-  value = google_artifact_registry_repository.research-images.id
+  value       = google_artifact_registry_repository.research-images.id
+}
+
+output "artifact_registry_region" {
+  description = "Region of remote repository"
+  value       = module.region_analysis.dominant_region
 }

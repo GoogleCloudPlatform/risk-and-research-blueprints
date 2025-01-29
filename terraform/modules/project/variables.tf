@@ -22,12 +22,6 @@ variable "project_id" {
   }
 }
 
-variable "region" {
-  description = "The region to host the cluster in"
-  type        = string
-  default     = "us-central1"
-}
-
 variable "enable_log_analytics" {
   description = "Enable log analytics in the project?"
   type        = bool

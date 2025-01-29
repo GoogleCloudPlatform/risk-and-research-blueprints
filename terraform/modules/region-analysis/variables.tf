@@ -12,18 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-terraform {
-  required_providers {
-    google = {
-      source  = "hashicorp/google"
-      version = "~> 6.17.0"
-    }
-    google-beta = {
-      source  = "hashicorp/google-beta"
-      version = "~> 6.17.0"
-    }
-  }
-  provider_meta "google" {
-    module_name = "cloud-solutions/fsi-rdp-loadtest-v1.0.0"
-  }
+# Region for resource deployment (default: us-central1)
+variable "regions" {
+  description = "List of regions to determine multi region choice"
+  type        = list(string)
 }

@@ -87,35 +87,7 @@ resource "google_project_iam_member" "metrics_writer" {
   member  = "principal://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${var.project_id}.svc.id.goog/subject/ns/default/sa/default"
 }
 
-<<<<<<< HEAD
-# Apply configurations to the cluster
-# (whether through templates or hard-coded)
-resource "null_resource" "cluster_init" {
-  depends_on = [
-    module.gke_standard
-  ]
-
-  for_each = merge(
-    { for fname in fileset(".", "${path.module}/k8s/*.yaml") : fname => file(fname) },
-    { "volume_yaml" = templatefile(
-      "${path.module}/k8s/volume.yaml.templ", {
-        gcs_storage_data = google_storage_bucket.us_dual_region_bucket.id
-      }),
-      "hpa_yaml" = templatefile(
-        "${path.module}/k8s/hpa.yaml.templ", {
-          name                = "gke-hpa",
-          workload_image      = var.workload_image,
-          workload_args       = var.workload_args,
-          workload_endpoint   = var.workload_grpc_endpoint,
-          agent_image         = var.agent_image,
-          gke_hpa_request_sub = google_pubsub_subscription.subscription[var.gke_hpa_request].name
-          gke_hpa_response    = var.gke_hpa_response
-      }),
-    }
-  )
-=======
 # Regional Resources
->>>>>>> 4bd17ec (Updates to support multi region deployments)
 
 # GCS bucket per region
 resource "google_storage_bucket" "gcs_storage_data" {
@@ -127,38 +99,12 @@ resource "google_storage_bucket" "gcs_storage_data" {
   force_destroy               = true
 }
 
-<<<<<<< HEAD
-resource "null_resource" "apply_custom_compute_class" {
-  depends_on = [
-    module.gke_standard
-  ]
-
-  triggers = {
-    cluster_change = local.cluster_config
-    kustomize_change = sha512(join("", [
-      for f in fileset(".", "${path.module}/../../../../../kubernetes/compute-classes/**") :
-      filesha512(f)
-    ]))
-  }
-
-  provisioner "local-exec" {
-    when    = create
-    command = <<-EOT
-
-    ${local.kubeconfig_script}
-
-    kubectl apply -k "${path.module}/../../../../../kubernetes/compute-classes/"
-
-    EOT
-  }
-=======
 # Create IAM role bindings for each GKE cluster
 resource "google_project_iam_member" "storage_objectuser" {
   for_each = { for idx, cluster in var.gke_clusters : idx => cluster }
   project  = data.google_project.environment.project_id
   role     = "roles/storage.objectUser"
   member   = "principalSet://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${data.google_project.environment.project_id}.svc.id.goog/kubernetes.cluster/https://container.googleapis.com/v1/projects/${data.google_project.environment.project_id}/locations/${each.value.region}/clusters/${each.value.cluster_name}"
->>>>>>> 4bd17ec (Updates to support multi region deployments)
 }
 
 resource "google_project_iam_member" "pubsub_publisher" {

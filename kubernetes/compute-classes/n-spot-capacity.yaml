@@ -18,8 +18,8 @@ metadata:
   name: spot-capacity
 spec:
   autoscalingPolicy:
-    consolidationDelayMinutes: 2 # Mark a node as eligible for scale down after 1 minute at 10% utilisation
-    consolidationThreshold: 30 # Very low threshold to encourage node packing
+    consolidationDelayMinutes: 5
+    consolidationThreshold: 60
   nodePoolAutoCreation:
     enabled: true
   priorities:
@@ -28,7 +28,7 @@ spec:
     minCores: 4 # Ensure enough CPU for HPC tasks
     minMemoryGb: 16 # Ensure enough memory for HPC tasks
     spot: true # Use spot instances for cost savings
-  - machineFamily: "n2d"
+  - machineFamily: "e2"
     minCores: 4 # Ensure enough CPU for HPC tasks
     minMemoryGb: 16 # Ensure enough memory for HPC tasks
     spot: true # Use spot instances for cost savings
@@ -40,10 +40,6 @@ spec:
     minCores: 4 # Ensure enough CPU for HPC tasks
     minMemoryGb: 16 # Ensure enough memory for HPC tasks
     spot: true # Use spot instances for cost savings
-  - machineFamily: "n2" # Fall back to on demand in case there is no Spot Quota
-    minCores: 4 # Ensure enough CPU for HPC tasks
-    minMemoryGb: 16 # Ensure enough memory for HPC tasks
-    spot: false # Use spot instances for cost savings
   whenUnsatisfiable: ScaleUpAnyway # Required for Autopilot
   activeMigration:
     optimizeRulePriority: false # Prioritize moving workloads to optimal instances

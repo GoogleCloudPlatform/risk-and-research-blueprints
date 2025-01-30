@@ -144,7 +144,7 @@ resource "google_cloud_run_v2_job" "workload_worker" {
           # are pulled from Pub/Sub, as if they are chunky in size they need to be
           # evenly distributed.
           # Maximum number of goroutines executing
-          "--goroutines", "2",
+          "--goroutines", "1",
           # Maximum number of outstanding messages
           "--maxoutstandingmessages", "1",
         ]

@@ -347,7 +347,7 @@ resource "google_container_node_pool" "primary_spot_nodes" {
   autoscaling {
     location_policy      = "ANY"
     total_min_node_count = 5
-    total_max_node_count = 750
+    total_max_node_count = 3000
   }
 
   management {

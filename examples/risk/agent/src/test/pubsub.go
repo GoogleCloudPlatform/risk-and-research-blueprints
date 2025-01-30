@@ -61,11 +61,17 @@ func NewPubSubGenerator(src *Source, stats *stats.StatsConfig, google *gcp.Googl
 		if len(args) == 2 {
 			slog.Debug("Subscribing", "project", google.ProjectID, "subscription", args[1])
 			sub := client.SubscriptionInProject(args[1], google.ProjectID)
+
+			subConfig, err := sub.Config(c.Context())
+			if err != nil {
+				return fmt.Errorf("failed getting subscription config: %w", err)
+			}
+
 			sub.ReceiveSettings.MaxOutstandingBytes = -1
 			sub.ReceiveSettings.MaxOutstandingMessages = -1
 
 			go func() {
-				msgReceiver := getMessageReceiver(stats, jobNum)
+				msgReceiver := getMessageReceiver(stats, jobNum, subConfig.EnableExactlyOnceDelivery)
 				if err := sub.Receive(c.Context(), msgReceiver); err != nil {
 					slog.Warn("Subscription error", "error", err)
 				}

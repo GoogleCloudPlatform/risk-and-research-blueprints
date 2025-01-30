@@ -128,6 +128,13 @@ variable "quota_contact_email" {
   default     = ""
 }
 
+# Enable Pub/Sub exactly once subscriptions
+variable "pubsub_exactly_once" {
+  type        = bool
+  default     = true
+  description = "Enable Pub/Sub exactly once subscriptions"
+}
+
 
 #
 # Naming customization

@@ -46,9 +46,11 @@ func NewPubSubPullAgent(cfg *protoio.BackendConfiguration, stats *stats.StatsCon
 	}
 	cmd.Flags().DurationVar(&idleTimeout, "idleTimeout", idleTimeout,
 		"Idle timeout -- shutdown after no activity for this time period")
+	cmd.Flags().DurationVar(&subSettings.MinExtensionPeriod, "minExtensionPeriod", 600*time.Second,
+		"Minimum deadline extension for processing tasks")
 	cmd.Flags().DurationVar(&subSettings.MaxExtension, "maxExtension", 60*time.Minute,
 		"Maximum deadline for processing tasks")
-	cmd.Flags().IntVar(&subSettings.NumGoroutines, "goroutines", 2,
+	cmd.Flags().IntVar(&subSettings.NumGoroutines, "goroutines", 1,
 		"Goroutine count")
 	cmd.Flags().IntVar(&subSettings.MaxOutstandingMessages, "maxoutstandingmessages", 1,
 		"Max number of messages outstanding")
@@ -87,6 +89,13 @@ func handlePubSubSubscribe(
 
 	// Subscribe to data
 	sub := client.SubscriptionInProject(subscription, project)
+	subConfig, err := sub.Config(ctxt)
+	if err != nil {
+		return fmt.Errorf("error getting subscription config: %w", err)
+	}
+	if subConfig.EnableExactlyOnceDelivery {
+		slog.Info("Exactly once delivery enabled")
+	}
 	sub.ReceiveSettings = *settings
 	return sub.Receive(ctxt, func(ctxt context.Context, msg *pubsub.Message) {
 
@@ -97,7 +106,11 @@ func handlePubSubSubscribe(
 		res, err := handleMessage(ctxt, google, invoker, top, msg.Data, msg.Attributes)
 		if err != nil {
 			slog.Warn("Failed calling service", "error", err)
-			msg.Nack()
+			if subConfig.EnableExactlyOnceDelivery {
+				logAckResult(ctxt, msg.NackWithResult())
+			} else {
+				msg.Nack()
+			}
 			return
 		}
 
@@ -109,25 +122,32 @@ func handlePubSubSubscribe(
 			// Nack on failure
 			if _, err := res.Get(ctxt); err != nil {
 				slog.Warn("failed publishing result", "error", err)
-				msg.Nack()
+				if subConfig.EnableExactlyOnceDelivery {
+					logAckResult(ctxt, msg.NackWithResult())
+				} else {
+					msg.Nack()
+				}
 				return
 			}
 
 			// All good - ack message!
-			r := msg.AckWithResult()
-
-			// Block until the result is returned and a pubsub.AcknowledgeStatus
-			// is returned for the acked message.
-			status, err := r.Get(ctxt)
-			if err != nil {
-				slog.Warn("Failed when calling result.Get", "error", err, "msg", msg.ID)
+			if subConfig.EnableExactlyOnceDelivery {
+				logAckResult(ctxt, msg.AckWithResult())
+			} else {
+				msg.Ack()
 			}
-			if status != pubsub.AcknowledgeStatusSuccess {
-				slog.Warn("Message acknowledged failed", "status", status, "id", msg.ID, "attributes", msg.Attributes)
-			}
-
 		}()
 	})
+}
+
+func logAckResult(ctxt context.Context, r *pubsub.AckResult) {
+	status, err := r.Get(ctxt)
+	if err != nil {
+		slog.Warn("Failed when calling result.Get", "error", err)
+	}
+	if status != pubsub.AcknowledgeStatusSuccess {
+		slog.Warn("Message acknowledged failed", "status", status)
+	}
 }
 
 func handleMessage(

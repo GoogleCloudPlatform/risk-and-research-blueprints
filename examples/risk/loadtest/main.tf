@@ -152,6 +152,9 @@ module "cloudrun" {
   # Cloud Run specific options
   bq_dataset = google_bigquery_dataset.main.dataset_id
 
+  # Pub/Sub configuration
+  pubsub_exactly_once = var.pubsub_exactly_once
+
   # Workload options
   workload_image         = module.agent.status["loadtest"].image
   workload_args          = local.workload_args
@@ -175,6 +178,9 @@ module "gke" {
 
   # GKE specific options
   gke_clusters = module.infrastructure.gke_clusters
+
+  # Pub/Sub configuration
+  pubsub_exactly_once = var.pubsub_exactly_once
 
   # Workload options
   # TODO: Other configuration for the workload - needs to be standardized

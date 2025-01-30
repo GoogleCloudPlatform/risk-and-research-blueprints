@@ -60,10 +60,17 @@ func NewPubSubGenerator(src *Source, stats *stats.StatsConfig, google *gcp.Googl
 		if len(args) == 2 {
 			slog.Debug("Subscribing", "project", google.ProjectID, "subscription", args[1])
 			sub := client.SubscriptionInProject(args[1], google.ProjectID)
+
+			subConfig, err := sub.Config(c.Context())
+			if err != nil {
+				return fmt.Errorf("failed getting subscription config: %w", err)
+			}
+
 			sub.ReceiveSettings.MaxOutstandingBytes = -1
 			sub.ReceiveSettings.MaxOutstandingMessages = -1
+
 			go func() {
-				msgReceiver := getMessageReceiver(stats, jobNum)
+				msgReceiver := getMessageReceiver(stats, jobNum, subConfig.EnableExactlyOnceDelivery)
 				if err := sub.Receive(c.Context(), msgReceiver); err != nil {
 					slog.Warn("Subscription error", "error", err)
 				}
@@ -99,23 +106,36 @@ func NewPubSubGenerator(src *Source, stats *stats.StatsConfig, google *gcp.Googl
 	return cmd
 }
 
-func getMessageReceiver(stats *stats.StatsConfig, jobNum int64) func(ctxt context.Context, msg *pubsub.Message) {
+func getMessageReceiver(stats *stats.StatsConfig, jobNum int64, exactlyOnce bool) func(ctxt context.Context, msg *pubsub.Message) {
+
+	if exactlyOnce {
+		slog.Info("Exactly once delivery enabled")
+	}
+
 	return func(ctxt context.Context, msg *pubsub.Message) {
 
 		// Debug
 		slog.Debug("Receiving response", "response", msg)
 
 		// Always ack for received messages
-		r := msg.AckWithResult()
-
-		// Block until the result is returned and a pubsub.AcknowledgeStatus
-		// is returned for the acked message.
-		status, err := r.Get(ctxt)
-		if err != nil {
-			slog.Warn("Failed when calling result.Get", "error", err, "msg", msg.ID)
+		var r *pubsub.AckResult = nil
+		if exactlyOnce {
+			r = msg.AckWithResult()
+		} else {
+			msg.Ack()
 		}
-		if status != pubsub.AcknowledgeStatusSuccess {
-			slog.Warn("Message acknowledged failed", "status", status, "id", msg.ID, "attributes", msg.Attributes)
+
+		// If exactly once enabled and there is an ack reslut,
+		// block until the result is returned and a pubsub.AcknowledgeStatus
+		// is returned for the acked message.
+		if r != nil {
+			status, err := r.Get(ctxt)
+			if err != nil {
+				slog.Warn("Failed when calling result.Get", "error", err, "msg", msg.ID)
+			}
+			if status != pubsub.AcknowledgeStatusSuccess {
+				slog.Warn("Message acknowledged failed", "status", status, "id", msg.ID, "attributes", msg.Attributes)
+			}
 		}
 
 		// Record performance of this single message and size of the message

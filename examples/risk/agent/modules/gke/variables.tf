@@ -85,6 +85,12 @@ variable "workload_init_args" {
   description = "Workload initialization arguments to run"
 }
 
+variable "pubsub_exactly_once" {
+  type        = bool
+  default     = true
+  description = "Enable Pub/Sub exactly once subscriptions"
+}
+
 
 #
 # Naming defaults

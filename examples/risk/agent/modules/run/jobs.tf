@@ -31,7 +31,7 @@ resource "google_pubsub_subscription" "sub_req" {
   project                      = google_pubsub_topic.topic_req[0].project
   topic                        = google_pubsub_topic.topic_req[0].name
   name                         = "${var.run_job_request}_sub"
-  enable_exactly_once_delivery = true
+  enable_exactly_once_delivery = var.pubsub_exactly_once
   ack_deadline_seconds         = 60
 }
 
@@ -51,6 +51,10 @@ resource "google_pubsub_subscription" "sub_resp" {
   name                         = "${var.run_job_response}_sub"
   enable_exactly_once_delivery = true
   ack_deadline_seconds         = 60
+  retry_policy {
+    minimum_backoff = "30s"
+    maximum_backoff = "600s"
+  }
 }
 
 resource "google_pubsub_topic_iam_member" "cloudrun_publisher" {

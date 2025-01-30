@@ -64,7 +64,7 @@ locals {
   test_controller_template = {
     for id, cfg in var.test_configs :
     id => templatefile(
-      "${path.module}/k8s/job.templ", {
+      "${path.module}/k8s/controller_job.templ", {
         parallel       = 1,
         job_name       = "${replace(id, "/[_\\.]/", "-")}-controller",
         container_name = "controller",

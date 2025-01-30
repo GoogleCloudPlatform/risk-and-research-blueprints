@@ -40,11 +40,11 @@ spec:
         args: ${jsonencode(args)}
         resources:
           requests:
-            memory: "1Gi"
-            cpu: "900m"
-          limits:
-            cpu: "2"
             memory: "2Gi"
+            cpu: "2"
+          limits:
+            cpu: "4"
+            memory: "4Gi"
         volumeMounts:
         - name: gcs-data
           mountPath: /data

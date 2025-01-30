@@ -107,8 +107,8 @@ resource "google_container_cluster" "risk-research" {
       "STATEFULSET",
       "DAEMONSET",
       "HPA",
-      "CADVISOR",
-      "KUBELET",
+      # "CADVISOR",
+      # "KUBELET",
       "APISERVER",
       "SCHEDULER",
       "CONTROLLER_MANAGER"
@@ -345,7 +345,7 @@ resource "google_container_node_pool" "primary_spot_nodes" {
 
   autoscaling {
     location_policy      = "ANY"
-    total_min_node_count = 0
+    total_min_node_count = 5
     total_max_node_count = 750
   }
 
@@ -378,7 +378,15 @@ resource "google_container_node_pool" "primary_spot_nodes" {
       "resource-model" : "n2"
       "resource-type" : "cpu"
       "billing-type" : "spot"
+      "cloud.google.com/compute-class" : "spot-capacity"
     }
+
+    taint {
+      key    = "cloud.google.com/compute-class"
+      value  = "spot-capacity"
+      effect = "NO_SCHEDULE"
+    }
+
     gvnic {
       enabled = true
     }

@@ -125,7 +125,7 @@ resource "google_project_iam_member" "pubsub_subscriber" {
   member   = "principalSet://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${data.google_project.environment.project_id}.svc.id.goog/kubernetes.cluster/https://container.googleapis.com/v1/projects/${data.google_project.environment.project_id}/locations/${each.value.region}/clusters/${each.value.cluster_name}"
 }
 
-resource "google_project_iam_member" "pubsub_subscriber" {
+resource "google_project_iam_member" "pubsub_viewer" {
   for_each = { for idx, cluster in var.gke_clusters : idx => cluster }
   project  = data.google_project.environment.project_id
   role     = "roles/pubsub.viewer"

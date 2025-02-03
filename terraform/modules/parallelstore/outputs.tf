@@ -36,3 +36,7 @@ output "access_points" {
   description = "List of access_points. Contains a list of IPv4 addresses used for client side configuration."
   value       = google_parallelstore_instance.parallelstore.access_points
 }
+output "location" {
+  description = "Location of the instance"
+  value = random_shuffle.zone.result[0]
+}

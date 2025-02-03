@@ -58,7 +58,9 @@ output "parallelstore_instances" {
   value = {
     for region, instance in module.parallelstore : region => {
       name     = instance.name
-      endpoint = instance.endpoint
+      access_points = instance.access_points
+      location = instance.location
+      id = instance.id
     }
   }
 }

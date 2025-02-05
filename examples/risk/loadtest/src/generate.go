@@ -145,6 +145,7 @@ func AddGenTasksCommand(rootCmd *cobra.Command) {
 	minMicros := int64(100_000)
 	maxMicros := int64(100_000)
 	initReadDir := ""
+	readDir := ""
 	readFile := ""
 	writeFile := ""
 	writeBytes := int64(0)
@@ -184,6 +185,7 @@ func AddGenTasksCommand(rootCmd *cobra.Command) {
 							PercFail:   percFail,
 							MaxMicros:  maxMicros,
 							MinMicros:  minMicros,
+							ReadDir:    readDir,
 							ReadFile:   readFile,
 							WriteFile:  writeFile,
 							WriteBytes: writeBytes,
@@ -213,6 +215,7 @@ func AddGenTasksCommand(rootCmd *cobra.Command) {
 	genTasks.Flags().Int64Var(&resultSize, "resultSize", resultSize, "Result payload size in bytes")
 	genTasks.Flags().Int64Var(&payloadSize, "payloadSize", payloadSize, "Payload size in bytes")
 	genTasks.Flags().StringVar(&initReadDir, "initReadDir", initReadDir, "Initial read directory")
+	genTasks.Flags().StringVar(&readDir, "readDir", readDir, "Read directory for task")
 	genTasks.Flags().StringVar(&readFile, "readFile", readFile, "Read file prefix for task")
 	genTasks.Flags().StringVar(&writeFile, "writeFile", writeFile, "Write file prefix for task")
 	genTasks.Flags().Int64Var(&writeBytes, "writeBytes", writeBytes, "Write file size")

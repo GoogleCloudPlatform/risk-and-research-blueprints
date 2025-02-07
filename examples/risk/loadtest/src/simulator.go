@@ -161,6 +161,7 @@ func runWork(task *LoadTask_Task, worktype string) (*LoadResult_Status, error) {
 			return nil, err
 		}
 		bytesRead += fileBytesRead
+		filesRead += 1
 	}
 
 	// Simulate work

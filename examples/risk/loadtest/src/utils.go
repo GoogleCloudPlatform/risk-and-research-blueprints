@@ -17,6 +17,7 @@ package main
 import (
 	"bufio"
 	"compress/gzip"
+	"context"
 	crand "crypto/rand"
 	"fmt"
 	"io"
@@ -26,13 +27,17 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	"cloud.google.com/go/storage"
 	"github.com/schollz/progressbar/v3"
+	"google.golang.org/api/iterator"
+	"google.golang.org/api/option"
 )
 
 // Run the work, applied to a sequence, with a pool of parallel workers.
@@ -137,11 +142,11 @@ func WriteLines(output string, it iter.Seq[string]) error {
 		w = os.Stdout
 	} else {
 
-		if err := os.MkdirAll(path.Dir(output), 0750); err != nil {
+		if err := MkdirAll(path.Dir(output)); err != nil {
 			return fmt.Errorf("failed making directory: %v", err)
 		}
 
-		f, err := os.Create(output)
+		f, err := CreateWriter(output)
 		if err != nil {
 			return fmt.Errorf("error creating: %v", err)
 		}
@@ -179,7 +184,7 @@ func ReadLines(input string) iter.Seq2[string, error] {
 		if input == "-" {
 			r = os.Stdin
 		} else {
-			file, err := os.Open(input)
+			file, err := OpenReader(input)
 			if err != nil {
 				yield("", fmt.Errorf("error opening %s: %w", input, err))
 				return
@@ -218,14 +223,8 @@ func ReadBytesFromDir(dir string) (int64, int64, error) {
 	totalBytes := int64(0)
 	totalFiles := int64(0)
 
-	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
-		slog.Debug("Handling path", "path", path, "d", d, "err", err)
-		if err != nil {
-			return err
-		}
-		if d.IsDir() {
-			return nil
-		}
+	err := WalkDirFiles(dir, false, func(path string, size int64) error {
+		slog.Debug("Handling path", "path", path)
 		cnt, err := ReadBytes(path)
 		if err != nil {
 			return err
@@ -240,10 +239,151 @@ func ReadBytesFromDir(dir string) (int64, int64, error) {
 
 const bufferSize = 1024 * 1024
 
+// Utility to get the storage client (caching)
+var storageClient = sync.OnceValues(func() (*storage.Client, error) {
+	return storage.NewClient(context.Background(), option.WithUserAgent(
+		"cloud-solutions/fsi-rdp-loadtest-v1.0.0"))
+})
+
+var gsPattern = regexp.MustCompile(`^gs://([^/]+)/(.*)$`)
+
+// Mkdir skips for gs:// outputs
+func MkdirAll(path string) error {
+	gs_match := gsPattern.FindStringSubmatch(path)
+	if gs_match != nil {
+		return nil
+	}
+
+	return os.MkdirAll(path, 0750)
+}
+
+// Join paths together, but handles gs:// prefixes
+func Join(path1 string, path2 string) string {
+	if strings.HasPrefix(path1, "gs://") {
+		if !strings.HasSuffix(path1, "/") {
+			return path1 + "/" + path2
+		} else {
+			return path1 + path2
+		}
+	}
+	return filepath.Join(path1, path2)
+}
+
+// WalkDirFiles handles local files or gs:// buckets and objects
+func WalkDirFiles(dir string, includeSize bool, handle func(file string, size int64) error) error {
+	gs_match := gsPattern.FindStringSubmatch(dir)
+	if gs_match != nil {
+		client, err := storageClient()
+		if err != nil {
+			return fmt.Errorf("opening creating GCS client: %w", err)
+		}
+		if !strings.HasSuffix(gs_match[2], "/") {
+			gs_match[2] = gs_match[2] + "/"
+		}
+		slog.Debug("listing GCS objects", "bucket", gs_match[1], "prefix", gs_match[2])
+		it := client.Bucket(gs_match[1]).Objects(context.Background(), &storage.Query{
+			Prefix:     gs_match[2],
+			Versions:   false,
+			Projection: storage.ProjectionNoACL})
+		for {
+			attrs, err := it.Next()
+			if err == iterator.Done {
+				break
+			}
+			if err != nil {
+				return fmt.Errorf("listing objects in path %s: %w", dir, err)
+			}
+			if err := handle(fmt.Sprintf("gs://%s/%s", attrs.Bucket, attrs.Name), attrs.Size); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	return filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+		slog.Debug("Handling path", "path", path, "d", d, "err", err)
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			return nil
+		}
+		size := int64(0)
+		if includeSize {
+			info, err := d.Info()
+			if err != nil {
+				return err
+			}
+			size = info.Size()
+		}
+		if err := handle(path, size); err != nil {
+			return err
+		}
+		return nil
+	})
+}
+
+// Open a reader from local POSIX or from GCS
+func OpenReader(file string) (io.ReadCloser, error) {
+
+	// ReadCloser
+	var r io.ReadCloser
+
+	// if starts with gs://, then open an object instead.
+	gs_match := gsPattern.FindStringSubmatch(file)
+	if gs_match != nil {
+		client, err := storageClient()
+		if err != nil {
+			return nil, fmt.Errorf("opening creating GCS client: %w", err)
+		}
+		f, err := client.Bucket(gs_match[1]).Object(gs_match[2]).NewReader(context.Background())
+		if err != nil {
+			return nil, fmt.Errorf("reading GCS object: %w", err)
+		}
+		r = f
+	} else {
+		// Open normal file
+		f, err := os.Open(file)
+		if err != nil {
+			return nil, fmt.Errorf("opening file %s: %w", file, err)
+		}
+		r = f
+	}
+
+	return r, nil
+}
+
+// Open a writer to local POSIX or to GCS
+func CreateWriter(file string) (io.WriteCloser, error) {
+	// if starts with gs://, then open an object instead.
+	gs_match := gsPattern.FindStringSubmatch(file)
+	if gs_match != nil {
+		client, err := storageClient()
+		if err != nil {
+			return nil, fmt.Errorf("opening creating GCS client: %w", err)
+		}
+		slog.Debug("Opening GCS for writing", "bucket", gs_match[1], "object", gs_match[2])
+		o := client.Bucket(gs_match[1]).Object(gs_match[2]).NewWriter(context.Background())
+		return o, nil
+	} else {
+		err := MkdirAll(filepath.Dir(file))
+		if err != nil {
+			return nil, fmt.Errorf("error creating directory %s: %w", filepath.Dir(file), err)
+		}
+
+		slog.Debug("Opening file for writing", "file", file)
+		o, err := os.Create(file)
+		if err != nil {
+			return nil, fmt.Errorf("error opening file %s for writing: %w", file, err)
+		}
+		return o, nil
+	}
+}
+
 // Read file and return the bytes read and error
 func ReadBytes(file string) (int64, error) {
 	slog.Debug("Reading", "file", file)
-	f, err := os.Open(file)
+	f, err := OpenReader(file)
 	if err != nil {
 		return 0, err
 	}
@@ -270,7 +410,7 @@ func ReadBytes(file string) (int64, error) {
 func WriteBytes(file string, size int64) (int64, error) {
 	slog.Debug("Writing", "file", file, "size", size)
 
-	f, err := os.Create(file)
+	f, err := CreateWriter(file)
 	if err != nil {
 		return 0, err
 	}

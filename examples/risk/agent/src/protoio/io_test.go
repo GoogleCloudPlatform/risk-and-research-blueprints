@@ -24,8 +24,9 @@ import (
 	"github.com/GoogleCloudPlatform/finance-research-risk-examples/examples/risk/agent/gcp"
 )
 
-//go:generate protoc -I. --go-grpc_out=. --go-grpc_opt=paths=source_relative test_service.proto
-//go:generate protoc -I. --go_out=. --go_opt=paths=source_relative test_service.proto
+// Command to compile the protobuf for tests:
+// protoc -I. --go-grpc_out=. --go-grpc_opt=paths=source_relative test_service.proto
+// protoc -I. --go_out=. --go_opt=paths=source_relative test_service.proto
 
 var defn = `
 syntax = "proto3";

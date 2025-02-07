@@ -17,12 +17,8 @@ package main
 import (
 	crand "crypto/rand"
 	"fmt"
-	"io/fs"
 	"log/slog"
 	"math/rand"
-	"os"
-	"path"
-	"path/filepath"
 	"slices"
 
 	"github.com/spf13/cobra"
@@ -45,19 +41,9 @@ func AddReadDataCommand(rootCmd *cobra.Command) {
 			// Find all files
 			files := make([]string, 0, 100)
 			var totalBytes int64
-			err := filepath.WalkDir(args[0], func(path string, d fs.DirEntry, err error) error {
-				if err != nil {
-					return err
-				}
-				if d.IsDir() {
-					return nil
-				}
+			err := WalkDirFiles(args[0], true, func(path string, size int64) error {
 				files = append(files, path)
-				info, err := d.Info()
-				if err != nil {
-					return err
-				}
-				totalBytes += info.Size()
+				totalBytes += size
 				return nil
 			})
 			if err != nil {
@@ -99,7 +85,7 @@ func AddWriteDataCommand(rootCmd *cobra.Command) {
 
 			// Create directory if not existing
 			slog.Info("Making parent directory", "dir", args[0])
-			if err := os.MkdirAll(args[0], 0750); err != nil {
+			if err := MkdirAll(args[0]); err != nil {
 				return err
 			}
 
@@ -107,7 +93,7 @@ func AddWriteDataCommand(rootCmd *cobra.Command) {
 			slog.Info("Writing data", "count", count, "size", sizeBytes, "writers", parallel)
 			files := func(yield func(string) bool) {
 				for i := 0; i < count; i++ {
-					if !yield(path.Join(args[0], fmt.Sprintf("file-%08d.bin", i+1))) {
+					if !yield(Join(args[0], fmt.Sprintf("file-%08d.bin", i+1))) {
 						break
 					}
 				}
@@ -145,8 +131,9 @@ func AddGenTasksCommand(rootCmd *cobra.Command) {
 	minMicros := int64(100_000)
 	maxMicros := int64(100_000)
 	initReadDir := ""
-	readFile := ""
-	writeFile := ""
+	readDir := ""
+	readFileDir := ""
+	writeFileDir := ""
 	writeBytes := int64(0)
 	resultSize := int64(100)
 	payloadSize := int64(100)
@@ -169,6 +156,17 @@ func AddGenTasksCommand(rootCmd *cobra.Command) {
 						slog.Warn("error generating payload", "error", err)
 						return
 					}
+
+					// Calculate the read and write file (if a dir is specified)
+					readFile := ""
+					if readFileDir != "" {
+						readFile = Join(readFileDir, fmt.Sprintf("file-%08d.bin", int64(i+1)))
+					}
+					writeFile := ""
+					if writeFileDir != "" {
+						writeFile = Join(writeFileDir, fmt.Sprintf("file-%08d.bin", int64(i+1)))
+					}
+
 					b, err := protojson.Marshal(&LoadTask{
 						Init: &LoadTask_Task{
 							Id:        int64(initialId),
@@ -213,8 +211,9 @@ func AddGenTasksCommand(rootCmd *cobra.Command) {
 	genTasks.Flags().Int64Var(&resultSize, "resultSize", resultSize, "Result payload size in bytes")
 	genTasks.Flags().Int64Var(&payloadSize, "payloadSize", payloadSize, "Payload size in bytes")
 	genTasks.Flags().StringVar(&initReadDir, "initReadDir", initReadDir, "Initial read directory")
-	genTasks.Flags().StringVar(&readFile, "readFile", readFile, "Read file prefix for task")
-	genTasks.Flags().StringVar(&writeFile, "writeFile", writeFile, "Write file prefix for task")
+	genTasks.Flags().StringVar(&readDir, "readDir", readDir, "Read directory for task")
+	genTasks.Flags().StringVar(&readFileDir, "readFileDir", readFileDir, "Read file prefix for task")
+	genTasks.Flags().StringVar(&writeFileDir, "writeFileDir", writeFileDir, "Write file prefix for task")
 	genTasks.Flags().Int64Var(&writeBytes, "writeBytes", writeBytes, "Write file size")
 	genTasks.Flags().IntVar(&count, "count", count, "Count of records created")
 	rootCmd.AddCommand(genTasks)

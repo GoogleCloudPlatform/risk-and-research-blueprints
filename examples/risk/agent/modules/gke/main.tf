@@ -150,6 +150,15 @@ module "config_apply" {
   # set this to empty string if not enabled
   pubsub_hpa_request = local.enable_hpa == 1 ? google_pubsub_subscription.subscription[var.gke_hpa_request].name : ""
   pubsub_job_request = local.enable_jobs == 1 ? google_pubsub_subscription.subscription[var.gke_job_request].name : ""
+  # Parallelstore Config
+
+  parallelstore_enabled = var.parallelstore_enabled
+  parallelstore_access_points = var.parallelstore_enabled ? join(",", var.parallelstore_instances[each.value.region].access_points) : null
+  parallelstore_vpc_name = var.parallelstore_enabled ? var.vpc_name : null 
+  parallelstore_location = var.parallelstore_enabled ? var.parallelstore_instances[each.value.region].location : null
+  parallelstore_instance_name = var.parallelstore_enabled ? var.parallelstore_instances[each.value.region].name : null
+  parallelstore_capacity_gib = var.parallelstore_enabled ? var.parallelstore_instances[each.value.region].capacity_gib : null
+
   depends_on = [
     google_project_iam_member.storage_objectuser,
     google_project_iam_member.pubsub_publisher,

@@ -113,3 +113,35 @@ variable "gke_hpa_response" {
   type    = string
   default = "gke_hpa_response"
 }
+
+# Parallelstore 
+# Enable/disable Parallelstore deployment (default: false)
+variable "parallelstore_enabled" {
+  type        = bool
+  description = "Enable or disable the deployment of Parallelstore."
+  default     = false
+}
+
+variable "parallelstore_instances" {
+  type = map(object({
+    name          = string
+    access_points = list(string)
+    location      = string
+    region        = string 
+    id            = string
+    capacity_gib  = number
+  }))
+  default = null
+  validation {
+    condition = var.parallelstore_instances == null || alltrue([
+      for instance in values(var.parallelstore_instances) : 
+      instance.access_points != null && instance.access_points != ""
+    ])
+    error_message = "All parallelstore instances must have non-null access_points"
+  }
+}
+
+variable "vpc_name" {
+  type = string
+  description = "Name of the VPC used by Parallelstore"
+}

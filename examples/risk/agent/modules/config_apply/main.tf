@@ -1,18 +1,3 @@
-# Copyright 2024 Google LLC
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     https://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-
 resource "random_string" "suffix" {
   length  = 4
   special = false
@@ -28,10 +13,16 @@ locals {
     }
   }
 
+  parallelstore_templates = var.parallelstore_enabled ? fileset("${path.module}/k8s/parallelstore", "*.yaml.templ") : []
+  
+  parallelstore_configs = { for fname in local.parallelstore_templates : fname => {
+    name = "parallelstore-${replace(fname, ".yaml.templ", "")}"
+    template_path = "${path.module}/k8s/parallelstore/${fname}"
+  }}
+
   # Whether to enable different patterns
   enable_jobs = (var.gke_job_request != "" && var.gke_job_response != "") ? 1 : 0
   enable_hpa  = (var.gke_hpa_request != "" && var.gke_job_response != "") ? 1 : 0
-
 
   cluster_config = "${var.cluster_name}-${var.region}-${var.project_id}"
 
@@ -61,6 +52,7 @@ locals {
         var.gke_job_response : var.gke_hpa_response)
     })
   }
+
   test_controller_template = {
     for id, cfg in var.test_configs :
     id => templatefile(
@@ -83,6 +75,7 @@ locals {
         cfg.testfile]
     })
   }
+
   test_shell = {
     for id, cfg in var.test_configs :
     id => templatefile(
@@ -99,7 +92,6 @@ locals {
 }
 
 # Apply configurations to the cluster
-# (whether through templates or hard-coded)
 resource "null_resource" "cluster_init" {
   for_each = merge(
     { for fname in fileset(".", "${path.module}/k8s/*.yaml") : fname => file(fname) },
@@ -149,11 +141,8 @@ resource "null_resource" "apply_custom_compute_class" {
   provisioner "local-exec" {
     when    = create
     command = <<-EOT
-
     ${local.kubeconfig_script}
-
     kubectl apply -k "${path.module}/../../../../../kubernetes/compute-classes/"
-
     EOT
   }
 }
@@ -170,11 +159,8 @@ resource "null_resource" "apply_custom_priority_class" {
   provisioner "local-exec" {
     when    = create
     command = <<-EOT
-
     ${local.kubeconfig_script}
-
     kubectl apply -k "${path.module}/../../../../../kubernetes/priority-classes/"
-
     EOT
   }
 }
@@ -192,9 +178,7 @@ resource "null_resource" "job_init" {
     })
   }
 
-  depends_on = [
-    null_resource.cluster_init,
-  ]
+  depends_on = [null_resource.cluster_init]
 
   triggers = {
     cluster_change = local.cluster_config
@@ -203,7 +187,6 @@ resource "null_resource" "job_init" {
   provisioner "local-exec" {
     when    = create
     command = <<-EOT
-
     ${local.kubeconfig_script}
 
     kubectl apply -f - <<EOF
@@ -212,21 +195,102 @@ resource "null_resource" "job_init" {
 
     while true; do
       echo "Checking status of job ${each.key}"
-
       if kubectl wait --for=condition=Complete --timeout=0 job/${each.key} 2> /dev/null; then
         echo "Job ${each.key} successful"
         exit 0
       fi
-
       if kubectl wait --for=condition=Failed --timeout=0 job/${each.key} 2> /dev/null; then
         echo "Job ${each.key} failed, logs follow:"
         kubectl logs -c ${each.key} --tail 10 "jobs/${each.key}"
         exit 1
       fi
-
       sleep 2
     done
+    EOT
+  }
+}
 
+# Parallelstore initialization
+resource "null_resource" "parallelstore_init" {
+  for_each = local.parallelstore_configs
+
+  triggers = {
+    template = templatefile(each.value.template_path, {
+      name                = each.value.name
+      access_points       = var.parallelstore_access_points
+      project_id          = var.project_id
+      vpc                 = var.parallelstore_vpc_name
+      location            = var.parallelstore_location
+      instance_name       = var.parallelstore_instance_name
+      capacity            = var.parallelstore_capacity_gib
+      workload_image      = var.workload_image
+      workload_args       = var.workload_args
+      workload_endpoint   = var.workload_grpc_endpoint
+      agent_image         = var.agent_image
+      gke_hpa_request_sub = var.pubsub_hpa_request
+      gke_hpa_response    = var.gke_hpa_response
+    })
+    cluster_change = local.cluster_config
+  }
+
+  provisioner "local-exec" {
+    when    = create
+    command = <<-EOT
+    ${local.kubeconfig_script}
+    kubectl apply -f - <<EOF
+    ${self.triggers.template}
+    EOF
+    EOT
+  }
+}
+
+# Run workload initialization jobs
+resource "null_resource" "parallelstore_job_init" {
+  for_each = var.parallelstore_enabled ? {
+    for id, cfg in local.workload_init_args :
+    id => templatefile("${path.module}/k8s/parallelstore/job.templ", {
+      job_name           = "parallelstore-${replace(id, "/[_\\.]/", "-")}"
+      container_name     = replace(id, "/[_\\.]/", "-")
+      access_points      = var.parallelstore_access_points
+      project_id         = var.project_id
+      vpc               = var.parallelstore_vpc_name
+      location          = var.parallelstore_location
+      instance_name     = var.parallelstore_instance_name
+      capacity          = var.parallelstore_capacity_gib
+      parallel          = 1
+      image             = cfg.image
+      args              = cfg.args
+    })
+  } : {}
+
+  depends_on = [null_resource.parallelstore_init]
+
+  triggers = {
+    cluster_change = local.cluster_config
+  }
+
+  provisioner "local-exec" {
+    when    = create
+    command = <<-EOT
+    ${local.kubeconfig_script}
+
+    kubectl apply -f - <<EOF
+    ${each.value}
+    EOF
+
+    while true; do
+      echo "Checking status of job ${each.key}"
+      if kubectl wait --for=condition=Complete --timeout=0 job/${each.key} 2> /dev/null; then
+        echo "Job ${each.key} successful"
+        exit 0
+      fi
+      if kubectl wait --for=condition=Failed --timeout=0 job/${each.key} 2> /dev/null; then
+        echo "Job ${each.key} failed, logs follow:"
+        kubectl logs -c ${each.key} --tail 10 "jobs/${each.key}"
+        exit 1
+      fi
+      sleep 2
+    done
     EOT
   }
 }

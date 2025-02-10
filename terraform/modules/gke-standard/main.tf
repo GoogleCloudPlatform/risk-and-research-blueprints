@@ -265,6 +265,7 @@ resource "google_container_cluster" "risk-research" {
     # Once deleted the node_config will change. We can ignore this.
     ignore_changes = [
       node_config,
+      maintenance_policy
     ]
   }
 

@@ -189,6 +189,11 @@ module "gke" {
   workload_grpc_endpoint = local.workload_grpc_endpoint
   workload_init_args     = local.workload_init_args
   test_configs           = local.test_configs_dict
+
+  # Parallelstore Config
+  parallelstore_enabled = var.parallelstore_enabled
+  parallelstore_instances = module.infrastructure.parallelstore_instances
+  vpc_name = module.infrastructure.vpc.name
 }
 
 #

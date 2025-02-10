@@ -23,19 +23,19 @@ resources:
 
 images:
 - name: fio
-  newName: us-docker.pkg.dev/fsi-research-5/research-images/fio # Replace with your desired registry
+  newName: us-docker.pkg.dev/PROJECT_ID/research-images/fio # Replace with your desired registry
   newTag: latest
 
 
 
 configMapGenerator:
 - literals:
-  - STORAGECLASS=parallelstore-us-central1-b
-  - PROJECT_ID=fsi-research-5
-  - LOCATION=us-central1-b
-  - INSTANCE_NAME=parallelstore-us-central1-b
-  - STORAGE_SIZE=21000Gi
-  - ACCESS_POINTS=10.176.0.68, 10.176.0.66, 10.176.0.67
+  - STORAGECLASS=STORAGECLASS
+  - PROJECT_ID=PROJECT_ID
+  - LOCATION=LOCATION
+  - INSTANCE_NAME=INSTANCE_NAME
+  - STORAGE_SIZE=STORAGE_SIZE
+  - ACCESS_POINTS=ACCESS_POINTS
   - NETWORK=research-vpc
   - MOUNT_LOCALITY=node
   - COMPLETIONS=1000

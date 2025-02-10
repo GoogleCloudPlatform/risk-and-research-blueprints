@@ -21,12 +21,12 @@ resources:
 
 images:
 - name: fio
-  newName: us-docker.pkg.dev/fsi-research-5/research-images/fio # Replace with your desired registry
+  newName: us-docker.pkg.dev/PROJECT_ID/research-images/fio # Replace with your desired registry
   newTag: latest
 
 configMapGenerator:
 - literals:
-  - BUCKETNAME=fsi-research-5-us-central1-gke-data-cueu
+  - BUCKETNAME=BUCKETNAME
   - COMPLETIONS=1
   - PARALLELISM=1
   name: gcs-vars

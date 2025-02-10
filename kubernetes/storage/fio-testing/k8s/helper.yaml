@@ -17,8 +17,6 @@ kind: Pod
 metadata:
   name: helper-pod
   namespace: default
-  # annotations:
-  #   gke-gcsfuse/volumes: "true"
 spec:
   terminationGracePeriodSeconds: 60
   containers:
@@ -39,6 +37,6 @@ spec:
   #   csi:
   #     driver: gcsfuse.csi.storage.gke.io
   #     volumeAttributes:
-  #       bucketName: fsi-research-5-fio-dual
+  #       bucketName: BUCKETNAME
   #       mountOptions: "implicit-dirs"
   #       gcsfuseLoggingSeverity: warning

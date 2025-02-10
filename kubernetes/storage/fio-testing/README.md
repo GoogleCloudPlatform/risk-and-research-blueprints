@@ -8,10 +8,8 @@ The setup includes:
 
 *   **Dockerfile:** Builds a Docker image containing FIO, `jq`, Python 3, and necessary tools.
 *   **entrypoint.sh:**  A script that handles FIO execution, mount point checks, configuration validation, and cleanup.
-* **k8s:** Directory containing sample GCS and Parallelstore configs for testing
-
+*   **k8s:** Directory containing sample GCS and Parallelstore configs for testing
     * **gcs:** Kubernetes Job definition for running FIO tests against a GCS bucket mounted using the GCSFuse CSI driver.
-
     * **parallelstore:** Kubernetes Job definition for running FIO tests against a Parallelstore Persistent Volume.
 
 ## Getting Started

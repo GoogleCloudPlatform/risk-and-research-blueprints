@@ -28,8 +28,6 @@ spec:
         app: fio-test-parallelstore
     spec:
       priorityClassName: default-priority
-      # nodeSelector:
-      #   cloud.google.com/compute-class: spot-capacity
       restartPolicy: Never
       containers:
       - name: fio

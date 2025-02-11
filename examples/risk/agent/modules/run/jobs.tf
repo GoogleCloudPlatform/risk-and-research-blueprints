@@ -33,6 +33,9 @@ resource "google_pubsub_subscription" "sub_req" {
   name                         = "${var.run_job_request}_sub"
   enable_exactly_once_delivery = true
   ack_deadline_seconds         = 60
+  expiration_policy {
+    ttl = ""
+  }
 }
 
 resource "google_pubsub_topic" "topic_resp" {
@@ -51,6 +54,9 @@ resource "google_pubsub_subscription" "sub_resp" {
   name                         = "${var.run_job_response}_sub"
   enable_exactly_once_delivery = true
   ack_deadline_seconds         = 60
+  expiration_policy {
+    ttl = ""
+  }
 }
 
 resource "google_pubsub_topic_iam_member" "cloudrun_publisher" {

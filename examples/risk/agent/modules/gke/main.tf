@@ -76,6 +76,72 @@ resource "google_monitoring_dashboard" "risk-platform-overview" {
   }
 }
 
+#
+# Create Pub/Sub topics and subscriptions
+#
+
+resource "google_pubsub_topic" "topic" {
+  for_each = toset(local.pubsub_topics)
+  project  = var.project_id
+  name     = each.value
+  message_storage_policy {
+    allowed_persistence_regions = [var.region]
+  }
+}
+
+resource "google_pubsub_subscription" "subscription" {
+  for_each                     = toset(local.pubsub_topics)
+  project                      = google_pubsub_topic.topic[each.value].project
+  topic                        = google_pubsub_topic.topic[each.value].name
+  name                         = "${each.value}_sub"
+  enable_exactly_once_delivery = true
+  ack_deadline_seconds         = 60
+}
+
+
+#
+# Create GCS bucket
+#
+
+resource "random_string" "suffix" {
+  length  = 4
+  special = false
+  upper   = false
+}
+
+
+# Configure GCS bucket for test
+resource "google_storage_bucket" "gcs_storage_data" {
+  project                     = var.project_id
+  location                    = var.region
+  name                        = "${var.project_id}-${var.region}-gke-data-${random_string.suffix.id}"
+  uniform_bucket_level_access = true
+}
+
+
+# IAM for Workloads in GKE
+
+resource "google_project_iam_member" "storage_objectuser" {
+  project = data.google_project.environment.project_id
+  role    = "roles/storage.objectUser"
+  member  = "principalSet://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${data.google_project.environment.project_id}.svc.id.goog/kubernetes.cluster/https://container.googleapis.com/v1/projects/${data.google_project.environment.project_id}/locations/${var.region}/clusters/${module.gke_standard[0].cluster_name}"
+}
+
+resource "google_project_iam_member" "pubsub_publisher" {
+  project = data.google_project.environment.project_id
+  role    = "roles/pubsub.publisher"
+  member  = "principalSet://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${data.google_project.environment.project_id}.svc.id.goog/kubernetes.cluster/https://container.googleapis.com/v1/projects/${data.google_project.environment.project_id}/locations/${var.region}/clusters/${module.gke_standard[0].cluster_name}"
+}
+
+resource "google_project_iam_member" "pubsub_subscriber" {
+  project = data.google_project.environment.project_id
+  role    = "roles/pubsub.subscriber"
+  member  = "principalSet://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${data.google_project.environment.project_id}.svc.id.goog/kubernetes.cluster/https://container.googleapis.com/v1/projects/${data.google_project.environment.project_id}/locations/${var.region}/clusters/${module.gke_standard[0].cluster_name}"
+}
+
+#
+# Initialization
+#
 
 # Apply needed permission to GCP service account (workload identity)
 # for reading Pub/Sub metrics

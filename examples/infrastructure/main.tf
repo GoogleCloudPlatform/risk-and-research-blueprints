@@ -94,7 +94,8 @@ module "parallelstore" {
   network         = google_compute_network.research-vpc.id
   deployment_type = var.deployment_type
   depends_on = [
-    google_service_networking_connection.default
+    google_service_networking_connection.default,
+    google_compute_global_address.parallelstore_range
   ]
 }
 
@@ -141,4 +142,33 @@ resource "google_compute_global_address" "parallelstore_range" {
   address_type  = "INTERNAL"
   prefix_length = 16
   network       = google_compute_network.research-vpc.id
+}
+
+# resource "google_compute_network_peering" "parallelstore" {
+#   name         = "servicenetworking-googleapis-com"
+#   network      = google_compute_network.research-vpc.id
+#   peer_network = "projects/${var.project_id}/global/networks/servicenetworking-googleapis-com"
+#   export_subnet_routes_with_public_ip = true
+#   import_subnet_routes_with_public_ip = true
+# }
+
+# TODO: This is a Hack until we can do this in terraform 
+resource "null_resource" "update_peering_routes" {
+  triggers = {
+    network_id = google_compute_network.research-vpc.id
+  }
+
+  provisioner "local-exec" {
+    command = <<EOT
+      gcloud compute networks peerings update servicenetworking-googleapis-com \
+        --network=${google_compute_network.research-vpc.name} \
+        --export-subnet-routes-with-public-ip \
+        --import-subnet-routes-with-public-ip \
+        --project=${var.project_id}
+    EOT
+  }
+
+  depends_on = [
+    google_service_networking_connection.default
+  ]
 }

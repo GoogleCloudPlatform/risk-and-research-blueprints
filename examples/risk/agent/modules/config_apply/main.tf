@@ -269,7 +269,7 @@ resource "null_resource" "parallelstore_job_init" {
     cluster_change = local.cluster_config
   }
 
-  provisioner "local-exec" {
+provisioner "local-exec" {
     when    = create
     command = <<-EOT
     ${local.kubeconfig_script}
@@ -279,14 +279,14 @@ resource "null_resource" "parallelstore_job_init" {
     EOF
 
     while true; do
-      echo "Checking status of job ${each.key}"
-      if kubectl wait --for=condition=Complete --timeout=0 job/${each.key} 2> /dev/null; then
-        echo "Job ${each.key} successful"
+      echo "Checking status of job parallelstore-${replace(each.key, "/[_\\.]/", "-")}"
+      if kubectl wait --for=condition=Complete --timeout=0 job/parallelstore-${replace(each.key, "/[_\\.]/", "-")} 2> /dev/null; then
+        echo "Job parallelstore-${replace(each.key, "/[_\\.]/", "-")} successful"
         exit 0
       fi
-      if kubectl wait --for=condition=Failed --timeout=0 job/${each.key} 2> /dev/null; then
-        echo "Job ${each.key} failed, logs follow:"
-        kubectl logs -c ${each.key} --tail 10 "jobs/${each.key}"
+      if kubectl wait --for=condition=Failed --timeout=0 job/parallelstore-${replace(each.key, "/[_\\.]/", "-")} 2> /dev/null; then
+        echo "Job parallelstore-${replace(each.key, "/[_\\.]/", "-")} failed, logs follow:"
+        kubectl logs -c ${replace(each.key, "/[_\\.]/", "-")} --tail 10 "jobs/parallelstore-${replace(each.key, "/[_\\.]/", "-")}"
         exit 1
       fi
       sleep 2
@@ -294,3 +294,5 @@ resource "null_resource" "parallelstore_job_init" {
     EOT
   }
 }
+
+

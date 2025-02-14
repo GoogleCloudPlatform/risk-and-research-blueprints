@@ -17,7 +17,7 @@ kind: PersistentVolume
 metadata:
   name: parallelstore-pv-${location}
 spec:
-  storageClassName: "parallestore-sc-${location}"
+  storageClassName: "parallelstore-sc-${location}"
   capacity:
     storage: ${capacity}Gi
   accessModes:

@@ -101,6 +101,9 @@ resource "google_storage_bucket" "gcs_storage_data" {
   name                        = "${var.project_id}-${each.value}-gke-data-${random_string.suffix.id}"
   uniform_bucket_level_access = true
   force_destroy               = true
+  hierarchical_namespace {
+    enabled = var.hsn_bucket
+  }
 }
 
 # Create IAM role bindings for each GKE cluster

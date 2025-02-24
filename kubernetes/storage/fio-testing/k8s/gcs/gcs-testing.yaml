@@ -15,10 +15,12 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: fio-test-gcs
+  name: fio-test-gcs-30000-1
   labels:
-    app: fio-test
+    app: fio-test-gcs
 spec:
+  completionMode: Indexed
+  backoffLimitPerIndex: 10
   completions: 1
   parallelism: 1
   ttlSecondsAfterFinished: 120
@@ -26,8 +28,8 @@ spec:
     metadata:
       annotations:
         gke-gcsfuse/volumes: "true"
-        gke-gcsfuse/cpu-limit: "200m"
-        gke-gcsfuse/memory-limit: "256Mi"
+        gke-gcsfuse/cpu-limit: "500m"
+        gke-gcsfuse/memory-limit: "512Mi"
         gke-gcsfuse/ephemeral-storage-limit: "5Gi"
         gke-gcsfuse/cpu-request: "50m"
         gke-gcsfuse/memory-request: "64Mi"
@@ -38,10 +40,22 @@ spec:
       priorityClassName: default-priority
       nodeSelector:
         cloud.google.com/compute-class: spot-capacity
-      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/zone
+                operator: In
+                values:
+                - us-central1-a
+                - us-central1-c
+                - us-central1-f
+      restartPolicy: OnFailure
       containers:
       - name: fio
         image: fio
+        imagePullPolicy: Always
         resources:
           limits:
             cpu: "1"
@@ -51,11 +65,15 @@ spec:
             memory: 4Gi
         env:
         - name: MOUNT_PATH
-          value: "/data"
+          value: /data
+        - name: TEST_DIR
+          value: test_files
         - name: POD_NAME
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
+        - name: CONFIG_PATH
+          value: /etc/fio/fio.conf
         volumeMounts:
         - name: gcs-fuse-csi-ephemeral
           mountPath: /data
@@ -66,7 +84,7 @@ spec:
         csi:
           driver: gcsfuse.csi.storage.gke.io
           volumeAttributes:
-            bucketName: fsi-research-5-fio-dual
+            bucketName: fsi-research-1-us-central1-gke-data-beao
             mountOptions: "implicit-dirs"
             gcsfuseLoggingSeverity: warning
       - name: fio-config

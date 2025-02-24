@@ -18,5 +18,5 @@ resources:
 - daemonset.yaml
 images:
 - name: nodemount
-  newName: us-central1-docker.pkg.dev/fsi-research-1/research-images/nodemount # Replace with your desired registry
+  newName: us-docker.pkg.dev/fsi-research-1/research-images/nodemount # Replace with your desired registry
   newTag: latest                    # Replace with your desired tag

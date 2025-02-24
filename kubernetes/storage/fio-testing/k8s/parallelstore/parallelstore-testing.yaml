@@ -17,16 +17,29 @@ kind: Job
 metadata:
   name: fio-test-parallelstore
   labels:
-    app: fio-test
+    app: fio-test-parallelstore
 spec:
+  completionMode: Indexed
+  backoffLimitPerIndex: 10
   completions: 1
   parallelism: 1
   ttlSecondsAfterFinished: 120
   template:
     metadata:
+      annotations:
+        gke-parallelstore/volumes: "true"
+        gke-parallelstore/cpu-request: 500m
+        gke-parallelstore/memory-request: 1Gi
+        gke-parallelstore/ephemeral-storage-request: 500Mi
+        gke-parallelstore/cpu-limit: 1000m
+        gke-parallelstore/memory-limit: 2Gi
+        gke-parallelstore/ephemeral-storage-limit: 1Gi
       labels:
         app: fio-test-parallelstore
     spec:
+      terminationGracePeriodSeconds: 60
+      nodeSelector:
+        cloud.google.com/compute-class: spot-capacity
       priorityClassName: default-priority
       restartPolicy: Never
       containers:
@@ -34,18 +47,29 @@ spec:
         image: fio
         resources:
           limits:
-            cpu: "1"
-            memory: 8Gi
-          requests:
-            cpu: "1"
+            cpu: "8"
             memory: 4Gi
+          requests:
+            cpu: "8"
+            memory: 4Gi
+        # resources:
+        #   limits:
+        #     cpu: "1"
+        #     memory: 4Gi
+        #   requests:
+        #     cpu: "1"
+        #     memory: 4Gi
         env:
         - name: MOUNT_PATH
-          value: "/data"
+          value: /data
+        - name: TEST_DIR
+          value: test_files
         - name: POD_NAME
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
+        - name: CONFIG_PATH
+          value: /etc/fio/fio.conf
         volumeMounts:
         - name: parallelstore-volume
           mountPath: /data
@@ -54,7 +78,7 @@ spec:
       volumes:
       - name: parallelstore-volume
         persistentVolumeClaim:
-          claimName: pvc
+          claimName: parallelstore-pvc
       - name: fio-config
         configMap:
           name: parallelstore-fio-config

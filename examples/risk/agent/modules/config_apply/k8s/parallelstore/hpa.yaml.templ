@@ -73,7 +73,7 @@ spec:
             memory: "1Gi"
             cpu: "200m"
           limits:
-            cpu: "250m"
+            cpu: "200m"
             memory: "1Gi"
         volumeMounts:
         - name: parallelstore-volume
@@ -82,10 +82,10 @@ spec:
         resources:
           requests:
             memory: "3Gi"
-            cpu: "1800m"
+            cpu: "800m"
           limits:
-            cpu: "3900m"
-            memory: "7Gi"
+            cpu: "800m"
+            memory: "3Gi"
         image: ${agent_image}
         args: ["serve", "pubsub-pull",
                # subscription to pull requests (tasks) from, topic to publish responses

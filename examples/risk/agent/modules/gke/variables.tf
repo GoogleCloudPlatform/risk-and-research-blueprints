@@ -37,6 +37,13 @@ variable "gke_clusters" {
   }))
 }
 
+# Enable hierarchical namespace GCS buckets
+variable "hsn_bucket" {
+  description = "Enable hierarchical namespace GCS buckets"
+  type = bool
+  default = false
+}
+
 # Containers to build
 variable "agent_image" {
   type        = string

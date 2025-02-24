@@ -38,7 +38,7 @@ resource "google_container_cluster" "risk-research" {
   name                = var.cluster_name
   project             = var.project_id
   location            = var.region
-  datapath_provider   = "ADVANCED_DATAPATH"
+  # datapath_provider   = "ADVANCED_DATAPATH"
   node_locations      = [random_shuffle.zone.result[0], random_shuffle.zone.result[1], random_shuffle.zone.result[2]]
   depends_on          = [google_kms_crypto_key_iam_member.gke_crypto_key]
 
@@ -90,14 +90,14 @@ resource "google_container_cluster" "risk-research" {
     }
   }
 
-  enable_intranode_visibility              = true
-  enable_cilium_clusterwide_network_policy = true
+  # enable_intranode_visibility              = true
+  # enable_cilium_clusterwide_network_policy = true
 
   monitoring_config {
-    advanced_datapath_observability_config {
-      enable_metrics = true
-      enable_relay   = false
-    }
+    # advanced_datapath_observability_config {
+    #   enable_metrics = true
+    #   enable_relay   = false
+    # }
 
     enable_components = [
       "SYSTEM_COMPONENTS",
@@ -107,8 +107,8 @@ resource "google_container_cluster" "risk-research" {
       "STATEFULSET",
       "DAEMONSET",
       "HPA",
-      # "CADVISOR",
-      # "KUBELET",
+      "CADVISOR",
+      "KUBELET",
       "APISERVER",
       "SCHEDULER",
       "CONTROLLER_MANAGER"

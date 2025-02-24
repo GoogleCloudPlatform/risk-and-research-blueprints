@@ -23,26 +23,37 @@ resources:
 
 images:
 - name: fio
-  newName: us-docker.pkg.dev/PROJECT_ID/research-images/fio # Replace with your desired registry
+  newName: us-docker.pkg.dev/fsi-research-5/research-images/fio # Replace with your desired registry
   newTag: latest
-
-
 
 configMapGenerator:
 - literals:
-  - STORAGECLASS=STORAGECLASS
-  - PROJECT_ID=PROJECT_ID
-  - LOCATION=LOCATION
-  - INSTANCE_NAME=INSTANCE_NAME
-  - STORAGE_SIZE=STORAGE_SIZE
-  - ACCESS_POINTS=ACCESS_POINTS
+  - JOB_NAME=fio-test-parallelstore-sidecar-3k
+  - COMPLETIONS=1
+  - PARALLELISM=1
+  - PROJECT_ID=fsi-research-5
+  - LOCATION=us-central1-c
+  - INSTANCE_NAME=parallelstore-us-central1-c
+  - STORAGE_SIZE=12000Gi
+  # - ACCESS_POINTS=10.93.0.3, 10.93.0.4, 10.93.0.2
+  - ACCESS_POINTS=10.196.0.2, 10.196.0.4, 10.196.0.3
   - NETWORK=research-vpc
-  - MOUNT_LOCALITY=node
-  - COMPLETIONS=1000
-  - PARALLELISM=1000
+  - MOUNT_LOCALITY=pod
+  # - MOUNT_LOCALITY=node
+  - TEST_DIR=test_files
+  - MOUNT_PATH=/data
   name: parallelstore-vars
 
 replacements:
+- source:
+    kind: ConfigMap
+    name: parallelstore-vars
+    fieldPath: data.JOB_NAME
+  targets:
+  - select:
+      kind: Job
+    fieldPaths:
+    - metadata.name
 - source:
     kind: ConfigMap
     name: parallelstore-vars
@@ -56,7 +67,33 @@ replacements:
       kind: PersistentVolumeClaim
     fieldPaths:
     - spec.resources.requests.storage
-
+- source:
+    kind: ConfigMap
+    name: parallelstore-vars
+    fieldPath: data.TEST_DIR
+  targets:
+  - select:
+      kind: Job
+    fieldPaths:
+    - spec.template.spec.containers.[name=fio].env.[name=TEST_DIR].value
+- source:
+    kind: ConfigMap
+    name: parallelstore-vars
+    fieldPath: data.MOUNT_PATH
+  targets:
+  - select:
+      kind: Job
+    fieldPaths:
+    - spec.template.spec.containers.[name=fio].env.[name=MOUNT_PATH].value
+- source:
+    kind: ConfigMap
+    name: parallelstore-vars
+    fieldPath: data.MOUNT_PATH
+  targets:
+  - select:
+      kind: Job
+    fieldPaths:
+    - spec.template.spec.containers.[name=fio].volumeMounts.[name=parallelstore-volume].mountPath
 - source:
     kind: ConfigMap
     name: parallelstore-vars
@@ -124,37 +161,10 @@ replacements:
     options:
       delimiter: '/'
       index: 2
-
-
 - source:
     kind: ConfigMap
     name: parallelstore-vars
-    fieldPath: data.STORAGECLASS
-  targets:
-  - select:
-      kind: PersistentVolume
-    fieldPaths:
-    - spec.storageClassName
-    options:
-      delimiter: '-'
-      index: 0
-- source:
-    kind: ConfigMap
-    name: parallelstore-vars
-    fieldPath: data.STORAGECLASS
-  targets:
-  - select:
-      kind: PersistentVolumeClaim
-    fieldPaths:
-    - spec.storageClassName
-    options:
-      delimiter: '-'
-      index: 0
-
-- source:
-    kind: ConfigMap
-    name: parallelstore-vars
-    fieldPath: data.INSTANCE_NAME
+    fieldPath: data.LOCATION
   targets:
   - select:
       kind: PersistentVolume
@@ -162,11 +172,11 @@ replacements:
     - metadata.name
     options:
       delimiter: '-'
-      index: 0
+      index: 2
 - source:
     kind: ConfigMap
     name: parallelstore-vars
-    fieldPath: data.INSTANCE_NAME
+    fieldPath: data.LOCATION
   targets:
   - select:
       kind: PersistentVolumeClaim
@@ -174,12 +184,31 @@ replacements:
     - metadata.name
     options:
       delimiter: '-'
-      index: 0
+      index: 2
+- source:
+    kind: ConfigMap
+    name: parallelstore-vars
+    fieldPath: data.LOCATION
+  targets:
+  - select:
+      kind: PersistentVolumeClaim
+    fieldPaths:
+    - spec.storageClassName
+    options:
+      delimiter: '-'
+      index: 2
+  - select:
+      kind: PersistentVolume
+    fieldPaths:
+    - spec.storageClassName
+    options:
+      delimiter: '-'
+      index: 2
 
 - source:
     kind: ConfigMap
     name: parallelstore-vars
-    fieldPath: data.INSTANCE_NAME
+    fieldPath: data.LOCATION
   targets:
   - select:
       kind: Job
@@ -187,7 +216,7 @@ replacements:
     - spec.template.spec.volumes.[name=parallelstore-volume].persistentVolumeClaim.claimName
     options:
       delimiter: '-'
-      index: 0
+      index: 2
 - source:
     kind: ConfigMap
     name: parallelstore-vars

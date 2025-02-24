@@ -21,17 +21,31 @@ resources:
 
 images:
 - name: fio
-  newName: us-docker.pkg.dev/PROJECT_ID/research-images/fio # Replace with your desired registry
+  newName: us-docker.pkg.dev/fsi-research-1/research-images/fio # Replace with your desired registry
   newTag: latest
 
 configMapGenerator:
 - literals:
-  - BUCKETNAME=BUCKETNAME
-  - COMPLETIONS=1
-  - PARALLELISM=1
+  - JOB_NAME=fio-test-gcs-10k-cache-15k-final-1
+  - BUCKETNAME=fsi-research-1-us-central1-gke-data-beao
+  # - BUCKETNAME=fsi-research-1-us-central1-gke-data-a8w9
+  # - BUCKETNAME=fsi-research-1-us-east4-gke-data-a8w9
+  - COMPLETIONS=10000
+  - PARALLELISM=5000
+  - TEST_DIR=test_files
+  - MOUNT_PATH=/data
   name: gcs-vars
 
 replacements:
+- source:
+    kind: ConfigMap
+    name: gcs-vars
+    fieldPath: data.JOB_NAME
+  targets:
+  - select:
+      kind: Job
+    fieldPaths:
+    - metadata.name
 - source:
     kind: ConfigMap
     name: gcs-vars
@@ -41,6 +55,33 @@ replacements:
       kind: Job
     fieldPaths:
     - spec.template.spec.volumes.[name=gcs-fuse-csi-ephemeral].csi.volumeAttributes.bucketName
+- source:
+    kind: ConfigMap
+    name: gcs-vars
+    fieldPath: data.TEST_DIR
+  targets:
+  - select:
+      kind: Job
+    fieldPaths:
+    - spec.template.spec.containers.[name=fio].env.[name=TEST_DIR].value
+- source:
+    kind: ConfigMap
+    name: gcs-vars
+    fieldPath: data.MOUNT_PATH
+  targets:
+  - select:
+      kind: Job
+    fieldPaths:
+    - spec.template.spec.containers.[name=fio].env.[name=MOUNT_PATH].value
+- source:
+    kind: ConfigMap
+    name: gcs-vars
+    fieldPath: data.MOUNT_PATH
+  targets:
+  - select:
+      kind: Job
+    fieldPaths:
+    - spec.template.spec.containers.[name=fio].volumeMounts.[name=gcs-fuse-csi-ephemeral].mountPath
 
 - source:
     kind: ConfigMap

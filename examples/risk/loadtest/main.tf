@@ -175,7 +175,8 @@ module "gke" {
   project_id  = var.project_id
   regions     = var.regions
   agent_image = module.agent.status["agent"].image
-
+  # GCS specific options
+  hsn_bucket = var.hsn_bucket
   # GKE specific options
   gke_clusters = module.infrastructure.gke_clusters
 

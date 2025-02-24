@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: data-cleanup-job
+spec:
+  completions: 1
+  parallelism: 1
+  template:
+    spec:
+      containers:
+      - name: data-cleanup
+        image: busybox
+        command: ["sh", "-c"]
+        args:
+          - |
+            echo "Data cleanup starting..."
+            rm -rf /data/*
+            file_count=$(find /data -mindepth 1 -print0 | wc -l --files0-from=-)
+            if [ "$file_count" -gt 0 ]; then
+              echo "Error: Files remaining after cleanup. Count: $file_count"
+              exit 1
+            fi
+            echo "Data cleanup complete."
+        volumeMounts:
+        - name: parallelstore-volume
+          mountPath: /data
+      restartPolicy: Never
+      volumes:
+      - name: parallelstore-volume
+        persistentVolumeClaim:
+          claimName: parallelstore-pvc-us-east4-c
+  ttlSecondsAfterFinished: 120

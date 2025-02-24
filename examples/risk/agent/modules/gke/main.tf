@@ -96,6 +96,20 @@ resource "google_pubsub_subscription" "subscription" {
   name                         = "${each.value}_sub"
   enable_exactly_once_delivery = true
   ack_deadline_seconds         = 60
+<<<<<<< HEAD
+||||||| parent of 02b97f7 (- A)
+  expiration_policy {
+    ttl = ""
+  }
+=======
+  expiration_policy {
+    ttl = ""
+  }
+  retry_policy {
+    minimum_backoff = "30s"
+    maximum_backoff = "600s"
+  }
+>>>>>>> 02b97f7 (- A)
 }
 
 

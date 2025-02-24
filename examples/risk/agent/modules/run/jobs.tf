@@ -62,6 +62,10 @@ resource "google_pubsub_subscription" "sub_resp" {
     minimum_backoff = "30s"
     maximum_backoff = "600s"
   }
+  retry_policy {
+    minimum_backoff = "30s"
+    maximum_backoff = "600s"
+  }
 }
 
 resource "google_pubsub_topic_iam_member" "cloudrun_publisher" {

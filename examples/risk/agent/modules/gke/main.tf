@@ -176,6 +176,10 @@ resource "google_pubsub_subscription" "subscription" {
   expiration_policy {
     ttl = ""
   }
+  retry_policy {
+    minimum_backoff = "30s"
+    maximum_backoff = "600s"
+  }
 }
 
 

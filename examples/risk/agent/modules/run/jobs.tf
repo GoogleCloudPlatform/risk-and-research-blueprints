@@ -36,6 +36,10 @@ resource "google_pubsub_subscription" "sub_req" {
   expiration_policy {
     ttl = ""
   }
+  retry_policy {
+    minimum_backoff = "30s"
+    maximum_backoff = "600s"
+  }
 }
 
 resource "google_pubsub_topic" "topic_resp" {
@@ -56,6 +60,10 @@ resource "google_pubsub_subscription" "sub_resp" {
   ack_deadline_seconds         = 60
   expiration_policy {
     ttl = ""
+  }
+  retry_policy {
+    minimum_backoff = "30s"
+    maximum_backoff = "600s"
   }
 }
 

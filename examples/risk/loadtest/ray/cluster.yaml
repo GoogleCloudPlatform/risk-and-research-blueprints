@@ -1,0 +1,62 @@
+apiVersion: ray.io/v1
+kind: RayCluster
+metadata:
+  name: test-cluster
+spec:
+  rayVersion: '2.37.0'
+  headGroupSpec:
+    rayStartParams:
+      dashboard-host: '0.0.0.0'
+    template:
+      metadata:
+      spec:
+        containers:
+        - name: ray-head
+          image: rayproject/ray:2.37.0
+          ports:
+          - containerPort: 6379
+            name: gcs
+          - containerPort: 8265
+            name: dashboard
+          - containerPort: 10001
+            name: client
+          resources:
+            limits:
+              cpu: "2"
+              ephemeral-storage: "9Gi"
+              memory: "4Gi"
+            requests:
+              cpu: "2"
+              ephemeral-storage: "9Gi"
+              memory: "4Gi"
+  workerGroupSpecs:
+  - replicas: 8
+    minReplicas: 1
+    maxReplicas: 20
+    groupName: worker-group
+    rayStartParams: {}
+    template:
+      metadata:
+        annotations:
+          gke-gcsfuse/volumes: "true"
+      spec:
+        containers:
+        - name: ray-worker
+          image: rayproject/ray:2.37.0
+          resources:
+            limits:
+              cpu: "4"
+              ephemeral-storage: "9Gi"
+              memory: "8Gi"
+            requests:
+              cpu: "4"
+              ephemeral-storage: "9Gi"
+              memory: "8Gi"
+          volumeMounts:
+          - mountPath: /data
+            name: data-pvc
+            readOnly: false
+        volumes:
+        - name: data-pvc
+          persistentVolumeClaim:
+            claimName: data-pvc

@@ -1,10 +1,39 @@
 {
-  "schedule": ["0 0 1 * *"],
-  "automerge": true, // Enable automerge globally
-  "automergeType": "branch",
-  "automergeStrategy": "merge-commit",
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended"
-  ]
+  ],
+  "schedule": ["* 0-4 * * 1"],
+  "timezone": "UTC",
+  "automerge": true,
+  "automergeType": "branch",
+  "automergeStrategy": "merge-commit",
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["major"],
+      "automerge": false
+    },
+    {
+      "matchUpdateTypes": ["minor", "patch"],
+      "matchCurrentVersion": "!/^0/",
+      "automerge": true
+    },
+    {
+      "matchDepTypes": ["devDependencies"],
+      "automerge": true
+    }
+  ],
+  "dependencyDashboard": true,
+  "dependencyDashboardTitle": "Dependency Dashboard",
+  "prHourlyLimit": 2,
+  "prConcurrentLimit": 5,
+  "labels": ["dependencies"],
+  "vulnerabilityAlerts": {
+    "labels": ["security"]
+  },
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["* 0-4 * * 1"]
+  },
+  "groupName": "all dependencies"
 }

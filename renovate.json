@@ -1,8 +1,8 @@
 {
   "schedule": ["0 0 1 * *"],
   "automerge": true, // Enable automerge globally
-  "automergeType": "branch", 
-  "automergeStrategy": "merge-commit", 
+  "automergeType": "branch",
+  "automergeStrategy": "merge-commit",
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended"

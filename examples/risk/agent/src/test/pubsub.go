@@ -36,13 +36,14 @@ import (
 func NewPubSubGenerator(src *Source, stats *stats.StatsConfig, google *gcp.GoogleConfig) *cobra.Command {
 
 	jsonPubSub := true
-
+	maxMessagesOutstanding := 1000
 	cmd := &cobra.Command{
 		Use:   "pubsub <topic> [subscription]",
 		Short: "Pubsub roundtrip throughput and latency tests",
 		Args:  cobra.RangeArgs(1, 2),
 	}
-	cmd.Flags().BoolVar(&jsonPubSub, "jsonPubSub", true, "Enable JSON in Pub/Sub instead of byte-encoded protobuf")
+	cmd.Flags().BoolVar(&jsonPubSub, "jsonPubSub", jsonPubSub, "Enable JSON in Pub/Sub instead of byte-encoded protobuf")
+	cmd.Flags().IntVar(&maxMessagesOutstanding, "maxMessagesOutstanding", maxMessagesOutstanding, "Maximum messages outstanding on publish")
 
 	cmd.RunE = func(c *cobra.Command, args []string) error {
 		slog.Info("Statistics are for messages (ops/second = messages per second).")
@@ -60,17 +61,11 @@ func NewPubSubGenerator(src *Source, stats *stats.StatsConfig, google *gcp.Googl
 		if len(args) == 2 {
 			slog.Debug("Subscribing", "project", google.ProjectID, "subscription", args[1])
 			sub := client.SubscriptionInProject(args[1], google.ProjectID)
-
-			subConfig, err := sub.Config(c.Context())
-			if err != nil {
-				return fmt.Errorf("failed getting subscription config: %w", err)
-			}
-
 			sub.ReceiveSettings.MaxOutstandingBytes = -1
 			sub.ReceiveSettings.MaxOutstandingMessages = -1
 
 			go func() {
-				msgReceiver := getMessageReceiver(stats, jobNum, subConfig.EnableExactlyOnceDelivery)
+				msgReceiver := getMessageReceiver(stats, jobNum)
 				if err := sub.Receive(c.Context(), msgReceiver); err != nil {
 					slog.Warn("Subscription error", "error", err)
 				}
@@ -78,7 +73,12 @@ func NewPubSubGenerator(src *Source, stats *stats.StatsConfig, google *gcp.Googl
 		}
 
 		// Start the source of test data
-		publishOp := getMessagePublisher(stats, client.Topic(args[0]), jobNum)
+		topic := client.Topic(args[0])
+		if maxMessagesOutstanding > 0 {
+			topic.PublishSettings.FlowControlSettings.MaxOutstandingMessages = maxMessagesOutstanding
+			topic.PublishSettings.FlowControlSettings.LimitExceededBehavior = pubsub.FlowControlBlock
+		}
+		publishOp := getMessagePublisher(stats, topic, jobNum)
 
 		// Start publishing
 		slog.Debug("Publishing", "project", google.ProjectID, "topic", args[0])
@@ -106,11 +106,7 @@ func NewPubSubGenerator(src *Source, stats *stats.StatsConfig, google *gcp.Googl
 	return cmd
 }
 
-func getMessageReceiver(stats *stats.StatsConfig, jobNum int64, exactlyOnce bool) func(ctxt context.Context, msg *pubsub.Message) {
-
-	if exactlyOnce {
-		slog.Info("Exactly once delivery enabled")
-	}
+func getMessageReceiver(stats *stats.StatsConfig, jobNum int64) func(ctxt context.Context, msg *pubsub.Message) {
 
 	return func(ctxt context.Context, msg *pubsub.Message) {
 
@@ -119,11 +115,7 @@ func getMessageReceiver(stats *stats.StatsConfig, jobNum int64, exactlyOnce bool
 
 		// Always ack for received messages
 		var r *pubsub.AckResult = nil
-		if exactlyOnce {
-			r = msg.AckWithResult()
-		} else {
-			msg.Ack()
-		}
+		r = msg.AckWithResult()
 
 		// If exactly once enabled and there is an ack reslut,
 		// block until the result is returned and a pubsub.AcknowledgeStatus

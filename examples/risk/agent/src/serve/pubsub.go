@@ -89,13 +89,6 @@ func handlePubSubSubscribe(
 
 	// Subscribe to data
 	sub := client.SubscriptionInProject(subscription, project)
-	subConfig, err := sub.Config(ctxt)
-	if err != nil {
-		return fmt.Errorf("error getting subscription config: %w", err)
-	}
-	if subConfig.EnableExactlyOnceDelivery {
-		slog.Info("Exactly once delivery enabled")
-	}
 	sub.ReceiveSettings = *settings
 	return sub.Receive(ctxt, func(ctxt context.Context, msg *pubsub.Message) {
 
@@ -106,11 +99,7 @@ func handlePubSubSubscribe(
 		res, err := handleMessage(ctxt, google, invoker, top, msg.Data, msg.Attributes)
 		if err != nil {
 			slog.Warn("Failed calling service", "error", err)
-			if subConfig.EnableExactlyOnceDelivery {
-				logAckResult(ctxt, msg.NackWithResult())
-			} else {
-				msg.Nack()
-			}
+			logAckResult(ctxt, msg.NackWithResult())
 			return
 		}
 
@@ -122,20 +111,12 @@ func handlePubSubSubscribe(
 			// Nack on failure
 			if _, err := res.Get(ctxt); err != nil {
 				slog.Warn("failed publishing result", "error", err)
-				if subConfig.EnableExactlyOnceDelivery {
-					logAckResult(ctxt, msg.NackWithResult())
-				} else {
-					msg.Nack()
-				}
+				logAckResult(ctxt, msg.NackWithResult())
 				return
 			}
 
 			// All good - ack message!
-			if subConfig.EnableExactlyOnceDelivery {
-				logAckResult(ctxt, msg.AckWithResult())
-			} else {
-				msg.Ack()
-			}
+			logAckResult(ctxt, msg.AckWithResult())
 		}()
 	})
 }

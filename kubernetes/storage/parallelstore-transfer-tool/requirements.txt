@@ -2,7 +2,7 @@
 #    uv pip compile requirements.in
 cachetools==5.5.2
     # via google-auth
-certifi==2024.12.14
+certifi==2025.1.31
     # via requests
 charset-normalizer==3.4.1
     # via requests
@@ -30,7 +30,7 @@ proto-plus==1.26.0
     # via
     #   google-api-core
     #   google-cloud-parallelstore
-protobuf==5.28.3
+protobuf==6.30.0
     # via
     #   google-api-core
     #   google-cloud-parallelstore

@@ -148,3 +148,9 @@ repos:
     args:
       - examples/risk/loadtest/src/...
       - examples/risk/agent/src/...
+
+# Renovate
+- repo: https://github.com/renovatebot/pre-commit-hooks
+  rev: 39.185.9
+  hooks:
+    - id: renovate-config-validator

@@ -1,0 +1,50 @@
+version: 2
+updates:
+- package-ecosystem: gomod
+  directory: /
+  labels:
+  - dependencies
+  - go
+  - release-chore
+  schedule:
+    interval: monthly
+    day: monday
+    time: "03:00"
+    timezone: America/Los_Angeles
+  target-branch: develop
+  ignore:
+  - dependency-name: "google.golang.org/api"
+  groups:
+  # group all Go minor/patch updates together and individual PRs for major updates
+  # https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/optimizing-pr-creation-version-updates#example-3-individual-pull-requests-for-major-updates-and-grouped-for-minorpatch-updates
+    go-minor-and-patch-updates:
+      applies-to: version-updates
+      patterns:
+      - "*"
+      update-types:
+      - minor
+      - patch
+- package-ecosystem: pip
+  directory: /community/front-end/ofe/
+  labels:
+  - dependencies
+  - python
+  - release-chore
+  schedule:
+    interval: monthly
+    time: "03:00"
+    timezone: America/Los_Angeles
+  target-branch: develop
+  reviewers:
+  - ek-nag
+  - mattstreet-nag
+  groups:
+    # group all OFE minor/patch updates together and individual PRs for major updates
+    # https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/optimizing-pr-creation-version-updates#example-3-individual-pull-requests-for-major-updates-and-grouped-for-minorpatch-updates
+    ofe-minor-and-patch-updates:
+      applies-to: version-updates
+      patterns:
+      - "*"
+      update-types:
+      - minor
+      - patch

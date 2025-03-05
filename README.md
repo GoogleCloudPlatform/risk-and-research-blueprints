@@ -7,16 +7,19 @@ This solution helps these firms standardize their compute and research platforms
 
 ## Use cases
 
-### High Throughput Compute
+### Risk: High Throughput Compute and Data & Analytics
 
-There are a number of components demonstrating High Throughput Compute on Google Cloud.
+There are a number of components demonstrating High Throughput Compute and Data & Analytics on Google Cloud.
 
-The HTC execution is an [unary gRPC service](https://grpc.io/docs/what-is-grpc/core-concepts/#unary-rpc). This consumes a single protobuf and returns a single protobuf. There are some provided [examples](examples/README.md).
-[HTC Example](examples/htcexample/README.md) is an example that provides a test harness that can exercise GCP infrastructure (some compute, some IO). [Quantlib](examples/quantlib/README.md) is a Python example using quantlib to calculate American Options.
+Risk examples rely on an [unary gRPC service](https://grpc.io/docs/what-is-grpc/core-concepts/#unary-rpc). This service consumes a single protobuf and returns a single protobuf and can be deployed through a variety of mechanisms.
 
-### Monte Carlo Simulations
+There are some provided example gRPC services, including a [Load Test](examples/risk/loadtest/README.md) example that provides a test harness that can exercise GCP infrastructure (some compute, some IO) and an [American Options](examples/risk/american-option/README.md) example is a Python example using quantlib to calculate American Options.
 
-Run Monte Carlo simulations for VaR on multiple tickers on GKE, review outputs in BigQuery and Perform data visualization in Vertex AI Notebooks
+It is recommended to start with [Load Test](examples/risk/loadtest/README.md) which provides an end to end deployment demonstration and testing framework.
+
+### Research: Monte Carlo Simulations
+
+Run [Monte Carlo simulations](examples/research/monte-carlo/README.md) for VaR on multiple tickers on GKE, review outputs in BigQuery and Perform data visualization in Vertex AI Notebooks
 
 ## Prerequisites
 

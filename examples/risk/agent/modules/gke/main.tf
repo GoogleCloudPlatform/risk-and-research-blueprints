@@ -173,6 +173,13 @@ resource "google_pubsub_subscription" "subscription" {
   name                         = "${each.value}_sub"
   enable_exactly_once_delivery = true
   ack_deadline_seconds         = 60
+  expiration_policy {
+    ttl = ""
+  }
+  retry_policy {
+    minimum_backoff = "30s"
+    maximum_backoff = "600s"
+  }
 }
 
 

@@ -12,18 +12,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-terraform {
-  required_providers {
-    google = {
-      source  = "hashicorp/google"
-      version = "~> 6.23.0"
-    }
-    google-beta = {
-      source  = "hashicorp/google-beta"
-      version = "~> 6.23.0"
-    }
-  }
-  provider_meta "google" {
-    module_name = "cloud-solutions/fsi-rdp-loadtest-v1.0.0"
-  }
-}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: parallelstore-fio-config
+data:
+  fio.conf: |
+    [global]
+    name=random_files_test
+    directory=/data
+    filename_format=random_file.${POD_NAME}.$filenum
+    ioengine=libaio
+    direct=1
+    group_reporting=1
+    fadvise_hint=0
+    runtime=300
+    time_based=1
+    unlink=1
+
+    [job1]
+    rw=rw
+    rwmixread=50
+    blocksize=16k
+    openfiles=1000
+    nrfiles=1000
+    filesize=10k-30m
+    thread=1
+
+    [cleanup]
+    stonewall
+    rw=trim

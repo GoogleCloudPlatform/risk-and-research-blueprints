@@ -21,6 +21,12 @@
     {
       "matchDepTypes": ["devDependencies"],
       "automerge": true
+    },
+    {
+      "matchManagers": ["terraform"],
+      "matchDepTypes": ["required_provider", "required_version"],
+      "enabled": true,
+      "automerge": true
     }
   ],
   "dependencyDashboard": true,
@@ -35,5 +41,8 @@
     "enabled": true,
     "schedule": ["* 0-4 * * 1"]
   },
-  "groupName": "all dependencies"
+  "groupName": "all dependencies",
+  "terraform": {
+    "enabled": true
+  }
 }

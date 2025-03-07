@@ -35,11 +35,9 @@ configMapGenerator:
   - LOCATION=us-central1-c
   - INSTANCE_NAME=parallelstore-us-central1-c
   - STORAGE_SIZE=12000Gi
-  # - ACCESS_POINTS=10.93.0.3, 10.93.0.4, 10.93.0.2
   - ACCESS_POINTS=10.196.0.2, 10.196.0.4, 10.196.0.3
   - NETWORK=research-vpc
   - MOUNT_LOCALITY=pod
-  # - MOUNT_LOCALITY=node
   - TEST_DIR=test_files
   - MOUNT_PATH=/data
   name: parallelstore-vars

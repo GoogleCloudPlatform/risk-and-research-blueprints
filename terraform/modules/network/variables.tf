@@ -46,8 +46,3 @@ variable "vpc_name" {
   description = "Name of the shared VPC network"
   type        = string
 }
-
-variable "vpc_name" {
-  description = "Name of the shared VPC network"
-  type        = string
-}

@@ -39,9 +39,9 @@ resource "google_container_cluster" "risk-research" {
   project             = var.project_id
   location            = var.region
   # datapath_provider   = "ADVANCED_DATAPATH"
-  datapath_provider   = "LEGACY_DATAPATH"
-  node_locations      = [random_shuffle.zone.result[0], random_shuffle.zone.result[1], random_shuffle.zone.result[2]]
-  depends_on          = [google_kms_crypto_key_iam_member.gke_crypto_key]
+  datapath_provider = "LEGACY_DATAPATH"
+  node_locations    = [random_shuffle.zone.result[0], random_shuffle.zone.result[1], random_shuffle.zone.result[2]]
+  depends_on        = [google_kms_crypto_key_iam_member.gke_crypto_key]
 
   # We do this to ensure we have large control plane nodes created initially
   initial_node_count       = var.scaled_control_plane ? 700 : 1
@@ -172,8 +172,7 @@ resource "google_container_cluster" "risk-research" {
       enabled = true
     }
     parallelstore_csi_driver_config {
-      enabled = false
-      # Todo re-enable
+      enabled = true
     }
   }
 
@@ -339,12 +338,12 @@ resource "google_container_node_pool" "primary_ondemand_nodes" {
 }
 
 resource "google_container_node_pool" "primary_spot_nodes" {
-  name           = "spot-nodes-1"
-  provider       = google-beta
-  project        = var.project_id
-  location       = var.region
-  cluster        = google_container_cluster.risk-research.name
-  node_locations = [random_shuffle.zone.result[0], random_shuffle.zone.result[1], random_shuffle.zone.result[2]]
+  name               = "spot-nodes-1"
+  provider           = google-beta
+  project            = var.project_id
+  location           = var.region
+  cluster            = google_container_cluster.risk-research.name
+  node_locations     = [random_shuffle.zone.result[0], random_shuffle.zone.result[1], random_shuffle.zone.result[2]]
   initial_node_count = 5
 
   autoscaling {

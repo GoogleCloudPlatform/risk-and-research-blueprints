@@ -34,7 +34,7 @@ output "name" {
 
 output "name_short" {
   description = "Resource name in the format {{name}}"
-  value = "parallelstore-${random_shuffle.zone.result[0]}"
+  value       = "parallelstore-${random_shuffle.zone.result[0]}"
 }
 
 
@@ -45,15 +45,15 @@ output "access_points" {
 
 output "location" {
   description = "Location of the instance"
-  value = google_parallelstore_instance.parallelstore.location
+  value       = google_parallelstore_instance.parallelstore.location
 }
 
 output "region" {
   description = "Region of the instance, used for mapping instances to GKE clusters"
-  value = var.region
+  value       = var.region
 }
 
 output "capacity_gib" {
   description = "Storage capacity of Parallelstore instance in Gibibytes (GiB)"
-  value = google_parallelstore_instance.parallelstore.capacity_gib
+  value       = google_parallelstore_instance.parallelstore.capacity_gib
 }

@@ -155,8 +155,8 @@ variable "pubsub_exactly_once" {
 # Enable hierarchical namespace GCS buckets
 variable "hsn_bucket" {
   description = "Enable hierarchical namespace GCS buckets"
-  type = bool
-  default = false
+  type        = bool
+  default     = false
 }
 
 

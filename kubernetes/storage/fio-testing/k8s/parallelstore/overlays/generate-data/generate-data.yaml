@@ -1,0 +1,51 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: file-generator-job-parallelstore
+spec:
+  ttlSecondsAfterFinished: 120
+  completions: 1
+  parallelism: 1
+  template:
+    spec:
+      priorityClassName: higher-priority
+      nodeSelector:
+        cloud.google.com/compute-class: spot-capacity
+      containers:
+      - name: file-generator
+        image: fio
+        command: ["/bin/bash", "/scripts/generate_files.sh"]
+        env:
+        - name: OUTPUT_DIR
+          value: "/data/test_files/"  # Default output directory
+        - name: MAX_RETRIES
+          value: "5"  # Number of retries for mount detection
+        - name: SLEEP_TIME
+          value: "1"  # Initial sleep time in seconds
+        - name: NUM_FILES
+          value: "1000" # Number of files to generate
+        - name: MIN_FILE_SIZE_KB
+          value: "1000000" # Minimum file size in KB
+        - name: MAX_FILE_SIZE_KB
+          value: "10000000" # Maximum file size in KB
+        resources:
+          requests:
+            memory: "8Gi"
+            cpu: "4"
+          limits:
+            memory: "16Gi"
+            cpu: "8"
+        volumeMounts:
+        - name: script-volume
+          mountPath: /scripts
+        - name: parallelstore-volume
+          mountPath: /data
+      volumes:
+      - name: script-volume
+        configMap:
+          name: file-generator-config
+      - name: parallelstore-volume
+        persistentVolumeClaim:
+          claimName: parallelstore-pvc
+      restartPolicy: Never
+  backoffLimit: 4

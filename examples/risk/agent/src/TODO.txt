@@ -21,5 +21,3 @@ Phase 2. Terraform and at scale.
  - Apply retry config, min extension period, use exactly once.
  - Ensure it works smoothly at e.g. 1000 pods and watch it for a bit. See if you can get some stats on scalability.
  - Try it without exactly-once configuration and see how it goes.
-
-

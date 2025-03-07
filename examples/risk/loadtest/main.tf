@@ -211,9 +211,9 @@ module "gke" {
   test_configs           = local.test_configs_dict
 
   # Parallelstore Config
-  parallelstore_enabled = var.parallelstore_enabled
+  parallelstore_enabled   = var.parallelstore_enabled
   parallelstore_instances = module.infrastructure.parallelstore_instances
-  vpc_name = module.infrastructure.vpc.name
+  vpc_name                = module.infrastructure.vpc.name
 }
 
 #

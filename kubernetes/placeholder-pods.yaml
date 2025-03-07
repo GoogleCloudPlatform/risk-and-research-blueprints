@@ -17,33 +17,32 @@ kind: Deployment
 metadata:
   name: balloon-deployment
 spec:
-  replicas: 50000
+  replicas: 35000
   selector:
     matchLabels:
       app: balloon-pod
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 1000 
-      maxUnavailable: 1000 
+      maxSurge: 1000
+      maxUnavailable: 1000
   template:
     metadata:
       labels:
         app: balloon-pod
     spec:
       priorityClassName: placeholder-priority
-      # Optional NodeSelector
       nodeSelector:
         cloud.google.com/compute-class: spot-capacity
       restartPolicy: Always
       containers:
       - name: balloon-container
-        image: busybox # lightweight image
-        command: ["sleep","infinity"] # Hold the container running forever
+        image: busybox
+        command: ["sleep","infinity"]
         resources:
           requests:
-            cpu: "1" # 1 CPU core
-            memory: "128Mi" # Keep memory low, they are just placeholders
+            cpu: "1"
+            memory: "128Mi"
           limits:
-            cpu: "1" # 1 CPU core
-            memory: "128Mi" # Keep memory low, they are just placeholders
+            cpu: "1"
+            memory: "128Mi"

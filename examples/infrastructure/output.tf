@@ -67,12 +67,12 @@ output "parallelstore_instances" {
   description = "Map of Parallelstore instances per region"
   value = {
     for region, instance in module.parallelstore : region => {
-      name     = instance.name_short
+      name          = instance.name_short
       access_points = instance.access_points
-      location = instance.location
-      region = instance.region
-      id = instance.id
-      capacity_gib = instance.capacity_gib
+      location      = instance.location
+      region        = instance.region
+      id            = instance.id
+      capacity_gib  = instance.capacity_gib
     }
   }
 }

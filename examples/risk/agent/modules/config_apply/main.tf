@@ -1,3 +1,17 @@
+# Copyright 2024 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 resource "random_string" "suffix" {
   length  = 4
   special = false
@@ -14,11 +28,11 @@ locals {
   }
 
   parallelstore_templates = var.parallelstore_enabled ? fileset("${path.module}/k8s/parallelstore", "*.yaml.templ") : []
-  
+
   parallelstore_configs = { for fname in local.parallelstore_templates : fname => {
-    name = "parallelstore-${replace(fname, ".yaml.templ", "")}"
+    name          = "parallelstore-${replace(fname, ".yaml.templ", "")}"
     template_path = "${path.module}/k8s/parallelstore/${fname}"
-  }}
+  } }
 
   # Whether to enable different patterns
   enable_jobs = (var.gke_job_request != "" && var.gke_job_response != "") ? 1 : 0
@@ -28,11 +42,10 @@ locals {
 
   kubeconfig_script = join("\n", [
     "export KUBECONFIG=\"${path.root}/generated/kubeconfig_${var.cluster_name}.yaml\"",
-    "if [ ! -r \"$${KUBECONFIG}\" ]; then",
-    "KUBECONFIG=\"$${KUBECONFIG}.${var.cluster_name}\" gcloud container clusters get-credentials ${var.cluster_name} --project=${var.project_id} --region=${var.region}",
-    "mv -f \"$${KUBECONFIG}.${var.cluster_name}\" \"$${KUBECONFIG}\"",
-    "fi",
+    "gcloud container clusters get-credentials ${var.cluster_name} --project=${var.project_id} --region=${var.region} --overwrite",
+    "mv -f \"${path.root}/generated/kubeconfig_${var.cluster_name}.yaml.${var.cluster_name}\" \"${path.root}/generated/kubeconfig_${var.cluster_name}.yaml\"",
   ])
+
 
   # Test output
   test_job_template = {
@@ -122,6 +135,9 @@ resource "null_resource" "cluster_init" {
     command = <<-EOT
     ${local.kubeconfig_script}
 
+    mkdir -p ${path.root}/generated/k8s_configs
+    echo "${each.value}" > ${path.root}/generated/k8s_configs/${each.key}
+
     kubectl apply -f - <<EOF
     ${each.value}
     EOF
@@ -189,6 +205,9 @@ resource "null_resource" "job_init" {
     command = <<-EOT
     ${local.kubeconfig_script}
 
+    mkdir -p ${path.root}/generated/k8s_configs/job_init
+    echo "${each.value}" > ${path.root}/generated/k8s_configs/job_init/${each.key}.yaml
+
     kubectl apply -f - <<EOF
     ${each.value}
     EOF
@@ -237,6 +256,8 @@ resource "null_resource" "parallelstore_init" {
     when    = create
     command = <<-EOT
     ${local.kubeconfig_script}
+    mkdir -p ${path.root}/generated/k8s_configs/parallelstore_init
+    echo "${self.triggers.template}" > ${path.root}/generated/k8s_configs/parallelstore_init/${each.key}
     kubectl apply -f - <<EOF
     ${self.triggers.template}
     EOF
@@ -249,17 +270,17 @@ resource "null_resource" "parallelstore_job_init" {
   for_each = var.parallelstore_enabled ? {
     for id, cfg in local.workload_init_args :
     id => templatefile("${path.module}/k8s/parallelstore/job.templ", {
-      job_name           = "parallelstore-${replace(id, "/[_\\.]/", "-")}"
-      container_name     = replace(id, "/[_\\.]/", "-")
-      access_points      = var.parallelstore_access_points
-      project_id         = var.project_id
-      vpc               = var.parallelstore_vpc_name
-      location          = var.parallelstore_location
-      instance_name     = var.parallelstore_instance_name
-      capacity          = var.parallelstore_capacity_gib
-      parallel          = 1
-      image             = cfg.image
-      args              = cfg.args
+      job_name       = "parallelstore-${replace(id, "/[_\\.]/", "-")}"
+      container_name = replace(id, "/[_\\.]/", "-")
+      access_points  = var.parallelstore_access_points
+      project_id     = var.project_id
+      vpc            = var.parallelstore_vpc_name
+      location       = var.parallelstore_location
+      instance_name  = var.parallelstore_instance_name
+      capacity       = var.parallelstore_capacity_gib
+      parallel       = 1
+      image          = cfg.image
+      args           = cfg.args
     })
   } : {}
 
@@ -269,11 +290,12 @@ resource "null_resource" "parallelstore_job_init" {
     cluster_change = local.cluster_config
   }
 
-provisioner "local-exec" {
+  provisioner "local-exec" {
     when    = create
     command = <<-EOT
     ${local.kubeconfig_script}
-
+    mkdir -p ${path.root}/generated/k8s_configs/parallelstore_job_init
+    echo "${each.value}" > ${path.root}/generated/k8s_configs/parallelstore_job_init/${each.key}.yaml
     kubectl apply -f - <<EOF
     ${each.value}
     EOF
@@ -294,5 +316,3 @@ provisioner "local-exec" {
     EOT
   }
 }
-
-

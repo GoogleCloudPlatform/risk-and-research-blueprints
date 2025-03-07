@@ -152,7 +152,7 @@ resource "google_compute_global_address" "parallelstore_range" {
 #   import_subnet_routes_with_public_ip = true
 # }
 
-# TODO: This is a Hack until we can do this in terraform 
+# TODO: This is a Hack until we can do this in terraform
 resource "null_resource" "update_peering_routes" {
   triggers = {
     network_id = google_compute_network.research-vpc.id

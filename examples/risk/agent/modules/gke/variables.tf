@@ -42,8 +42,8 @@ variable "gke_clusters" {
 # Enable hierarchical namespace GCS buckets
 variable "hsn_bucket" {
   description = "Enable hierarchical namespace GCS buckets"
-  type = bool
-  default = false
+  type        = bool
+  default     = false
 }
 
 # Containers to build
@@ -123,7 +123,7 @@ variable "gke_hpa_response" {
   default = "gke_hpa_response"
 }
 
-# Parallelstore 
+# Parallelstore
 # Enable/disable Parallelstore deployment (default: false)
 variable "parallelstore_enabled" {
   type        = bool
@@ -136,14 +136,14 @@ variable "parallelstore_instances" {
     name          = string
     access_points = list(string)
     location      = string
-    region        = string 
+    region        = string
     id            = string
     capacity_gib  = number
   }))
   default = null
   validation {
     condition = var.parallelstore_instances == null || alltrue([
-      for instance in values(var.parallelstore_instances) : 
+      for instance in values(var.parallelstore_instances) :
       instance.access_points != null && instance.access_points != ""
     ])
     error_message = "All parallelstore instances must have non-null access_points"
@@ -151,6 +151,6 @@ variable "parallelstore_instances" {
 }
 
 variable "vpc_name" {
-  type = string
+  type        = string
   description = "Name of the VPC used by Parallelstore"
 }

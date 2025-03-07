@@ -1,0 +1,43 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: data-cleanup-job
+spec:
+  completions: 1
+  parallelism: 1
+  template:
+    spec:
+      nodeSelector:
+        cloud.google.com/compute-class: spot-capacity
+      priorityClassName: higher-priority
+      containers:
+      - name: cleanup
+        image: busybox
+        command: ["sh", "-c"]
+        env:
+        - name: OUTPUT_DIR
+          value: test_files
+        args:
+          - |
+            echo "Data cleanup starting..."
+            if [ -z "${OUTPUT_DIR}" ]; then
+              echo "OUTPUT_DIR not set, skipping deletion."
+            else
+              echo "Deleting contents of: /data/${OUTPUT_DIR}"
+              rm -rf /data/${OUTPUT_DIR}
+            fi
+            file_count=$(find /data/${OUTPUT_DIR} -mindepth 1 -print0 | wc -l --files0-from=-)
+            if [ "$file_count" -gt 0 ]; then
+              echo "Error: Files remaining after cleanup. Count: $file_count"
+              exit 1
+            fi
+            echo "Data cleanup complete."
+        volumeMounts:
+        - name: parallelstore-volume
+          mountPath: /data
+      restartPolicy: Never
+      volumes:
+      - name: parallelstore-volume
+        persistentVolumeClaim:
+          claimName: parallelstore-pvc
+  ttlSecondsAfterFinished: 120

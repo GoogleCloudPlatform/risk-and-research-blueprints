@@ -39,6 +39,7 @@ resource "google_container_cluster" "risk-research" {
   project             = var.project_id
   location            = var.region
   # datapath_provider   = "ADVANCED_DATAPATH"
+  datapath_provider   = "LEGACY_DATAPATH"
   node_locations      = [random_shuffle.zone.result[0], random_shuffle.zone.result[1], random_shuffle.zone.result[2]]
   depends_on          = [google_kms_crypto_key_iam_member.gke_crypto_key]
 
@@ -171,7 +172,8 @@ resource "google_container_cluster" "risk-research" {
       enabled = true
     }
     parallelstore_csi_driver_config {
-      enabled = true
+      enabled = false
+      # Todo re-enable
     }
   }
 

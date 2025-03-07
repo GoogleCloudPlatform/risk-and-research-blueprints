@@ -31,6 +31,9 @@ configMapGenerator:
   - JOB_NAME=fio-test-parallelstore-sidecar-3k
   - COMPLETIONS=1
   - PARALLELISM=1
+  - JOB_NAME=fio-test-parallelstore-sidecar-3k
+  - COMPLETIONS=1
+  - PARALLELISM=1
   - PROJECT_ID=fsi-research-5
   - LOCATION=us-central1-c
   - INSTANCE_NAME=parallelstore-us-central1-c

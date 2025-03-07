@@ -116,6 +116,12 @@ resource "google_project_iam_member" "gke_hpa" {
   member  = "principal://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${var.project_id}.svc.id.goog/subject/ns/custom-metrics/sa/custom-metrics-stackdriver-adapter"
 }
 
+resource "google_project_iam_member" "gke_hpa_pubsub" {
+  project = var.project_id
+  role    = "roles/pubsub.viewer"
+  member  = "principal://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${var.project_id}.svc.id.goog/subject/ns/custom-metrics/sa/custom-metrics-stackdriver-adapter"
+}
+
 resource "google_project_iam_member" "metrics_writer" {
   project = var.project_id
   role    = "roles/monitoring.metricWriter"

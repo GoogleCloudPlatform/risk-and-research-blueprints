@@ -21,6 +21,15 @@ output "gke_clusters" {
       endpoint     = cluster.endpoint
     }
   ]
+output "gke_clusters" {
+  description = "List of GKE cluster names and their regions"
+  value = [
+    for k, cluster in module.gke_standard : {
+      cluster_name = cluster.cluster_name
+      region       = cluster.region
+      endpoint     = cluster.endpoint
+    }
+  ]
 }
 
 output "artifact_registry" {
@@ -29,6 +38,7 @@ output "artifact_registry" {
     url               = module.artifact_registry.artifact_registry_url
     artifact_registry = module.artifact_registry.artifact_registry
     id                = module.artifact_registry.artifact_registry_id
+    location          = module.artifact_registry.artifact_registry_region
     location          = module.artifact_registry.artifact_registry_region
   }
 }

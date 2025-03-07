@@ -55,45 +55,6 @@ resource "google_pubsub_subscription" "subscription" {
   project                      = google_pubsub_topic.topic[each.value].project
   topic                        = google_pubsub_topic.topic[each.value].name
   name                         = "${each.value}_sub"
-  enable_exactly_once_delivery = var.pubsub_exactly_once
-  ack_deadline_seconds         = 60
-  retry_policy {
-    minimum_backoff = "30s"
-    maximum_backoff = "600s"
-  }
-}
-
-# Dashboard
-
-resource "google_monitoring_dashboard" "risk-platform-overview" {
-  project        = data.google_project.environment.project_id
-  dashboard_json = file("${path.module}/${var.dashboard}")
-
-  lifecycle {
-    ignore_changes = [
-      dashboard_json
-    ]
-  }
-}
-
-#
-# Create Pub/Sub topics and subscriptions
-#
-
-resource "google_pubsub_topic" "topic" {
-  for_each = toset(local.pubsub_topics)
-  project  = var.project_id
-  name     = each.value
-  message_storage_policy {
-    allowed_persistence_regions = [var.region]
-  }
-}
-
-resource "google_pubsub_subscription" "subscription" {
-  for_each                     = toset(local.pubsub_topics)
-  project                      = google_pubsub_topic.topic[each.value].project
-  topic                        = google_pubsub_topic.topic[each.value].name
-  name                         = "${each.value}_sub"
   enable_exactly_once_delivery = true
   ack_deadline_seconds         = 60
   expiration_policy {

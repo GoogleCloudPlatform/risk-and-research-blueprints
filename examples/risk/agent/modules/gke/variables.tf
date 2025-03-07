@@ -25,6 +25,8 @@ variable "project_id" {
 
 variable "regions" {
   description = "List of regions where GKE clusters should be created"
+variable "regions" {
+  description = "List of regions where GKE clusters should be created"
   type        = list(string)
   default     = ["us-central1"]
 }

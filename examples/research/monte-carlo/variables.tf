@@ -60,6 +60,14 @@ variable "deployment_type" {
 }
 
 
+# Deployment type for Parallelstore SCRATCH or PERSISTENT (default: SCRATCH)
+variable "deployment_type" {
+  description = "Parallelstore Instance deployment type"
+  type        = string
+  default     = "SCRATCH"
+}
+
+
 # Enable/disable initial deployment of a large nodepool for control plane nodes (default: false)
 variable "scaled_control_plane" {
   type        = bool

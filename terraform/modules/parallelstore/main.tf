@@ -34,7 +34,18 @@ resource "google_parallelstore_instance" "parallelstore" {
   provider        = google-beta
   instance_id     = "parallelstore-${random_shuffle.zone.result[0]}"
   location        = random_shuffle.zone.result[0]
+<<<<<<< HEAD
   capacity_gib    = var.deployment_type == "PERSISTENT" ? 21000 : 12000
+||||||| parent of 879a9c7 (Updates to support multi region deployments)
+  project      = data.google_project.environment.project_id
+  provider     = google-beta
+  instance_id  = "daos-instance"
+  location     = "${var.region}-a"
+  capacity_gib = 12000
+  network      = var.network
+=======
+  capacity_gib    = var.deployment_type == "PERSISTENT" ? 24000 : 12000
+>>>>>>> 879a9c7 (Updates to support multi region deployments)
   network         = var.network
   deployment_type = var.deployment_type
   # file_stripe_level = "FILE_STRIPE_LEVEL_MAX"

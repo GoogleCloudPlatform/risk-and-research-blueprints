@@ -55,11 +55,8 @@ resource "google_pubsub_subscription" "subscription" {
   project                      = google_pubsub_topic.topic[each.value].project
   topic                        = google_pubsub_topic.topic[each.value].name
   name                         = "${each.value}_sub"
-  enable_exactly_once_delivery = true
+  enable_exactly_once_delivery = var.pubsub_exactly_once
   ack_deadline_seconds         = 60
-  expiration_policy {
-    ttl = ""
-  }
   retry_policy {
     minimum_backoff = "30s"
     maximum_backoff = "600s"

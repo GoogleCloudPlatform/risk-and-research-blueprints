@@ -89,6 +89,13 @@ func handlePubSubSubscribe(
 
 	// Subscribe to data
 	sub := client.SubscriptionInProject(subscription, project)
+	subConfig, err := sub.Config(ctxt)
+	if err != nil {
+		return fmt.Errorf("error getting subscription config: %w", err)
+	}
+	if subConfig.EnableExactlyOnceDelivery {
+		slog.Info("Exactly once delivery enabled")
+	}
 	sub.ReceiveSettings = *settings
 	return sub.Receive(ctxt, func(ctxt context.Context, msg *pubsub.Message) {
 

@@ -27,9 +27,10 @@ images:
 
 configMapGenerator:
 - literals:
-  - JOB_NAME=fio-test-parallelstore-smallfiles-5k-a
-  - COMPLETIONS=50000
-  - PARALLELISM=30000
+  # - JOB_NAME=fio-test-parallelstore-smallfiles-3k-node
+  - JOB_NAME=test-node
+  - COMPLETIONS=5
+  - PARALLELISM=3
   - PROJECT_ID=fsi-research-1
   - LOCATION=us-central1-b
   - INSTANCE_NAME=parallelstore-us-central1-b

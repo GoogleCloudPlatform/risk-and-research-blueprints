@@ -27,17 +27,17 @@ images:
 
 configMapGenerator:
 - literals:
-  - JOB_NAME=fio-test-parallelstore-smallfiles-5k-a
-  - COMPLETIONS=50000
-  - PARALLELISM=30000
+  - JOB_NAME=fio-test-parallelstore-largefiles-3k-sidecar
+  - COMPLETIONS=5000
+  - PARALLELISM=3000
   - PROJECT_ID=fsi-research-1
   - LOCATION=us-central1-b
   - INSTANCE_NAME=parallelstore-us-central1-b
   - STORAGE_SIZE=27000Gi
   - ACCESS_POINTS=10.93.0.3, 10.93.0.4, 10.93.0.2
   - NETWORK=research-vpc
-  - MOUNT_LOCALITY=node
-  - TEST_DIR=test_files/small_files
+  - MOUNT_LOCALITY=pod
+  - TEST_DIR=test_files/large_files
   - MOUNT_PATH=/data
   name: parallelstore-vars
 

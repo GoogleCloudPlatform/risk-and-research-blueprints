@@ -21,20 +21,21 @@ data:
     [global]
     directory=${MOUNT_PATH}/${TEST_DIR}
     bs=4k
-    direct=1
+    # direct=1
     ioengine=libaio
-    iodepth=32
+    iodepth=1
     time_based
     runtime=300
     group_reporting
     invalidate=1
     size=100G
+    
     # Small Reads
     [parallel_reads]
     name=library_parallel_reads_${POD_NAME}
     filename_format=testfile_*
     rw=randread
-    numjobs=32
+    numjobs=1
     nrfiles=1000
     openfiles=100
     filesize=50k-1M
@@ -42,26 +43,3 @@ data:
     randrepeat=0
     norandommap=1
     startdelay=10
-    # Large files
-    # [parallel_reads]
-    # name=library_parallel_reads_${POD_NAME}
-    # filename_format=testfile_*
-    # rw=randread
-    # numjobs=32
-    # nrfiles=125
-    # openfiles=100
-    # filesize=50m-250m
-    # file_service_type=random
-    # randrepeat=0
-    # norandommap=1
-    # startdelay=10
-    
-    # [sequential_reads]
-    # stonewall
-    # name=library_sequential_reads_${POD_NAME}
-    # filename_format=testfile_*
-    # rw=read
-    # numjobs=16
-    # openfiles=100
-    # nrfiles=1000
-    # filesize=10k-1M

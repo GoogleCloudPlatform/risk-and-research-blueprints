@@ -15,6 +15,9 @@ data:
 
     RETRY_COUNTER=0
 
+    echo "Sleeping for ${SLEEP_TIME} seconds..."
+    sleep ${SLEEP_TIME}
+
     # Check if OUTPUT_DIR environment variable is set
     if [ -z "${OUTPUT_DIR}" ]; then
         echo "ERROR: OUTPUT_DIR not set. Please set it before running the script."
@@ -50,7 +53,6 @@ data:
             --ioengine=libaio \
             --rw=write \
             --bs=4k \
-            --direct=1 \
             --size=${size} \
             --filename="${OUTPUT_DIR}/testfile_${file_num}" \
             --thread \
@@ -74,10 +76,12 @@ data:
             echo "Generated $file_num files..."
         fi
 
-        generate_file "$file_num" "$size" &
+        generate_file "$file_num" "$size" # Sequential
+        if [ $? -ne 0 ]; then
+            echo "ERROR: Failed to create file testfile_$file_num"
+        fi
     done
 
-    wait
 
     end_time=$(date +%s)
     elapsed_time=$((end_time - start_time))

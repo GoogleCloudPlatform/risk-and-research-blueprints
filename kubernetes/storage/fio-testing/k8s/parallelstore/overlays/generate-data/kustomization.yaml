@@ -27,20 +27,20 @@ images:
 
 configMapGenerator:
 - literals:
-  - JOB_NAME=generate-data-parallelstore
+  - JOB_NAME=generate-data-parallelstore-large-files
   - PROJECT_ID=fsi-research-1
   - LOCATION=us-central1-b
   - INSTANCE_NAME=parallelstore-us-central1-b
-  - STORAGE_SIZE=21000Gi
+  - STORAGE_SIZE=27000Gi
   - ACCESS_POINTS=10.93.0.3, 10.93.0.4, 10.93.0.2
   - NETWORK=research-vpc
   - MOUNT_LOCALITY=node
-  - OUTPUT_DIR=/data/test_files
+  - OUTPUT_DIR=/data/test_files/large_files
   - MAX_RETRIES=5
-  - SLEEP_TIME=1
+  - SLEEP_TIME=10
   - NUM_FILES=1000
-  - MIN_FILE_SIZE_KB=100000
-  - MAX_FILE_SIZE_KB=200000
+  - MIN_FILE_SIZE_KB=50000
+  - MAX_FILE_SIZE_KB=250000
   name: parallelstore-vars
 
 replacements:
@@ -66,15 +66,6 @@ replacements:
       kind: PersistentVolumeClaim
     fieldPaths:
     - spec.resources.requests.storage
-- source:
-    kind: ConfigMap
-    name: parallelstore-vars
-    fieldPath: data.OUTPUT_DIR
-  targets:
-  - select:
-      kind: Job
-    fieldPaths:
-    - spec.template.spec.containers.[name=file-generator].volumeMounts.[name=parallelstore-volume].mountPath
 - source:
     kind: ConfigMap
     name: parallelstore-vars
@@ -240,3 +231,12 @@ replacements:
       kind: Job
     fieldPaths:
     - spec.template.spec.containers.[name=file-generator].env.[name=MAX_FILE_SIZE_KB].value
+- source:
+    kind: ConfigMap
+    name: parallelstore-vars
+    fieldPath: data.OUTPUT_DIR
+  targets:
+  - select:
+      kind: Job
+    fieldPaths:
+    - spec.template.spec.containers.[name=file-generator].env.[name=OUTPUT_DIR].value

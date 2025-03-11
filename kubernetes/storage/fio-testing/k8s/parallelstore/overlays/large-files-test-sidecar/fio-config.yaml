@@ -29,39 +29,17 @@ data:
     group_reporting
     invalidate=1
     size=100G
-    # Small Reads
+
+    Large files
     [parallel_reads]
     name=library_parallel_reads_${POD_NAME}
     filename_format=testfile_*
     rw=randread
     numjobs=32
-    nrfiles=1000
+    nrfiles=125
     openfiles=100
-    filesize=50k-1M
+    filesize=50m-250m
     file_service_type=random
     randrepeat=0
     norandommap=1
     startdelay=10
-    # Large files
-    # [parallel_reads]
-    # name=library_parallel_reads_${POD_NAME}
-    # filename_format=testfile_*
-    # rw=randread
-    # numjobs=32
-    # nrfiles=125
-    # openfiles=100
-    # filesize=50m-250m
-    # file_service_type=random
-    # randrepeat=0
-    # norandommap=1
-    # startdelay=10
-    
-    # [sequential_reads]
-    # stonewall
-    # name=library_sequential_reads_${POD_NAME}
-    # filename_format=testfile_*
-    # rw=read
-    # numjobs=16
-    # openfiles=100
-    # nrfiles=1000
-    # filesize=10k-1M

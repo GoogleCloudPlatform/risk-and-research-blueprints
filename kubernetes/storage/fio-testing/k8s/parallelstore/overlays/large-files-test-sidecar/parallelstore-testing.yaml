@@ -26,14 +26,14 @@ spec:
   ttlSecondsAfterFinished: 120
   template:
     metadata:
-      # annotations:
-      #   gke-parallelstore/volumes: "true"
-      #   gke-parallelstore/cpu-request: 500m
-      #   gke-parallelstore/memory-request: 1Gi
-      #   gke-parallelstore/ephemeral-storage-request: 500Mi
-      #   gke-parallelstore/cpu-limit: 1000m
-      #   gke-parallelstore/memory-limit: 2Gi
-      #   gke-parallelstore/ephemeral-storage-limit: 1Gi
+      annotations:
+        gke-parallelstore/volumes: "true"
+        gke-parallelstore/cpu-request: 500m
+        gke-parallelstore/memory-request: 1Gi
+        gke-parallelstore/ephemeral-storage-request: 500Mi
+        gke-parallelstore/cpu-limit: 1000m
+        gke-parallelstore/memory-limit: 2Gi
+        gke-parallelstore/ephemeral-storage-limit: 1Gi
       labels:
         app: fio-test-parallelstore
     spec:

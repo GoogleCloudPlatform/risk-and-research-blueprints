@@ -17,7 +17,7 @@ spec:
         command: ["/bin/bash", "/scripts/generate_files.sh"]
         env:
         - name: OUTPUT_DIR
-          value: "/data/test_files/"  # Default output directory
+          value: "/data/test_files"  # Default output directory
         - name: MAX_RETRIES
           value: "5"  # Number of retries for mount detection
         - name: SLEEP_TIME

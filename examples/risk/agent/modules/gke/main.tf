@@ -122,48 +122,25 @@ resource "google_storage_bucket" "gcs_storage_data" {
   uniform_bucket_level_access = true
 }
 
-resource "google_storage_bucket" "us_dual_region_bucket" {
-  name = "${var.project_id}-dualregion-gke-data-${random_string.suffix.id}"
-  project = data.google_project.environment.project_id
-  location      = "US"
-  uniform_bucket_level_access = true
-  rpo = "ASYNC_TURBO"
-  custom_placement_config {
-    data_locations = ["US-CENTRAL1","US-EAST4"]
-  }
-  versioning {
-    enabled = true
-  }
-
-  lifecycle_rule {
-    condition {
-      age = 30
-    }
-    action {
-      type = "Delete"
-    }
-  }
-}
-
 
 # IAM for Workloads in GKE
 
 resource "google_project_iam_member" "storage_objectuser" {
   project = data.google_project.environment.project_id
   role    = "roles/storage.objectUser"
-  member  = "principalSet://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${data.google_project.environment.project_id}.svc.id.goog/kubernetes.cluster/https://container.googleapis.com/v1/projects/${data.google_project.environment.project_id}/locations/${var.region}/clusters/${var.cluster_name}"
+  member  = "principalSet://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${data.google_project.environment.project_id}.svc.id.goog/kubernetes.cluster/https://container.googleapis.com/v1/projects/${data.google_project.environment.project_id}/locations/${var.region}/clusters/${module.gke_standard[0].cluster_name}"
 }
 
 resource "google_project_iam_member" "pubsub_publisher" {
   project = data.google_project.environment.project_id
   role    = "roles/pubsub.publisher"
-  member  = "principalSet://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${data.google_project.environment.project_id}.svc.id.goog/kubernetes.cluster/https://container.googleapis.com/v1/projects/${data.google_project.environment.project_id}/locations/${var.region}/clusters/${var.cluster_name}"
+  member  = "principalSet://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${data.google_project.environment.project_id}.svc.id.goog/kubernetes.cluster/https://container.googleapis.com/v1/projects/${data.google_project.environment.project_id}/locations/${var.region}/clusters/${module.gke_standard[0].cluster_name}"
 }
 
 resource "google_project_iam_member" "pubsub_subscriber" {
   project = data.google_project.environment.project_id
   role    = "roles/pubsub.subscriber"
-  member  = "principalSet://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${data.google_project.environment.project_id}.svc.id.goog/kubernetes.cluster/https://container.googleapis.com/v1/projects/${data.google_project.environment.project_id}/locations/${var.region}/clusters/${var.cluster_name}"
+  member  = "principalSet://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${data.google_project.environment.project_id}.svc.id.goog/kubernetes.cluster/https://container.googleapis.com/v1/projects/${data.google_project.environment.project_id}/locations/${var.region}/clusters/${module.gke_standard[0].cluster_name}"
 }
 
 #

@@ -37,15 +37,6 @@ variable "regions" {
     condition     = length(var.regions) <= 4
     error_message = "Maximum 4 regions supported"
   }
-variable "regions" {
-  description = "List of regions where GKE clusters should be created"
-  type        = list(string)
-  default     = ["us-central1"]
-
-  validation {
-    condition     = length(var.regions) <= 4
-    error_message = "Maximum 4 regions supported"
-  }
 }
 
 # Zones for resource deployment (default: us-central1 [a-d])
@@ -150,13 +141,6 @@ variable "parallelstore_zone" {
   type        = string
   default     = null
 }
-
-variable "deployment_type" {
-  description = "Parallelstore Instance deployment type" # SCRATCH or PERSISTENT
-  type        = string
-  default     = "SCRATCH"
-}
-
 
 # Artifact Registry
 

@@ -63,62 +63,25 @@ resource "google_pubsub_subscription" "subscription" {
   }
 }
 
+# Dashboard
 
-#
-# Create GCS bucket
-#
+resource "google_monitoring_dashboard" "risk-platform-overview" {
+  project        = data.google_project.environment.project_id
+  dashboard_json = file("${path.module}/${var.dashboard}")
 
-resource "random_string" "suffix" {
-  length  = 4
-  special = false
-  upper   = false
+  lifecycle {
+    ignore_changes = [
+      dashboard_json
+    ]
+  }
 }
 
-
-# Configure GCS bucket for test
-resource "google_storage_bucket" "gcs_storage_data" {
-  project                     = var.project_id
-  location                    = var.region
-  name                        = "${var.project_id}-${var.region}-gke-data-${random_string.suffix.id}"
-  uniform_bucket_level_access = true
-}
-
-
-# IAM for Workloads in GKE
-
-resource "google_project_iam_member" "storage_objectuser" {
-  project = data.google_project.environment.project_id
-  role    = "roles/storage.objectUser"
-  member  = "principalSet://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${data.google_project.environment.project_id}.svc.id.goog/kubernetes.cluster/https://container.googleapis.com/v1/projects/${data.google_project.environment.project_id}/locations/${var.region}/clusters/${module.gke_standard[0].cluster_name}"
-}
-
-resource "google_project_iam_member" "pubsub_publisher" {
-  project = data.google_project.environment.project_id
-  role    = "roles/pubsub.publisher"
-  member  = "principalSet://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${data.google_project.environment.project_id}.svc.id.goog/kubernetes.cluster/https://container.googleapis.com/v1/projects/${data.google_project.environment.project_id}/locations/${var.region}/clusters/${module.gke_standard[0].cluster_name}"
-}
-
-resource "google_project_iam_member" "pubsub_subscriber" {
-  project = data.google_project.environment.project_id
-  role    = "roles/pubsub.subscriber"
-  member  = "principalSet://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${data.google_project.environment.project_id}.svc.id.goog/kubernetes.cluster/https://container.googleapis.com/v1/projects/${data.google_project.environment.project_id}/locations/${var.region}/clusters/${module.gke_standard[0].cluster_name}"
-}
-
-#
-# Initialization
-#
 
 # Apply needed permission to GCP service account (workload identity)
 # for reading Pub/Sub metrics
 resource "google_project_iam_member" "gke_hpa" {
   project = var.project_id
   role    = "roles/monitoring.viewer"
-  member  = "principal://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${var.project_id}.svc.id.goog/subject/ns/custom-metrics/sa/custom-metrics-stackdriver-adapter"
-}
-
-resource "google_project_iam_member" "gke_hpa_pubsub" {
-  project = var.project_id
-  role    = "roles/pubsub.viewer"
   member  = "principal://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${var.project_id}.svc.id.goog/subject/ns/custom-metrics/sa/custom-metrics-stackdriver-adapter"
 }
 
@@ -192,12 +155,12 @@ module "config_apply" {
   pubsub_job_request = local.enable_jobs == 1 ? google_pubsub_subscription.subscription[var.gke_job_request].name : ""
   # Parallelstore Config
 
-  parallelstore_enabled       = var.parallelstore_enabled
+  parallelstore_enabled = var.parallelstore_enabled
   parallelstore_access_points = var.parallelstore_enabled ? join(",", var.parallelstore_instances[each.value.region].access_points) : null
-  parallelstore_vpc_name      = var.parallelstore_enabled ? var.vpc_name : null
-  parallelstore_location      = var.parallelstore_enabled ? var.parallelstore_instances[each.value.region].location : null
+  parallelstore_vpc_name = var.parallelstore_enabled ? var.vpc_name : null 
+  parallelstore_location = var.parallelstore_enabled ? var.parallelstore_instances[each.value.region].location : null
   parallelstore_instance_name = var.parallelstore_enabled ? var.parallelstore_instances[each.value.region].name : null
-  parallelstore_capacity_gib  = var.parallelstore_enabled ? var.parallelstore_instances[each.value.region].capacity_gib : null
+  parallelstore_capacity_gib = var.parallelstore_enabled ? var.parallelstore_instances[each.value.region].capacity_gib : null
 
   depends_on = [
     google_project_iam_member.storage_objectuser,

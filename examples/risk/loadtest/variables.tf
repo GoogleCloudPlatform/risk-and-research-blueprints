@@ -61,23 +61,6 @@ variable "cloudrun_enabled" {
   type        = bool
   default     = true
 }
-  default     = ["us-central1"]
-
-  validation {
-    condition     = length(var.regions) <= 4
-    error_message = "Maximum 4 regions supported"
-  }
-}
-
-#
-# Enable / Disable Cloud Run
-#
-
-variable "cloudrun_enabled" {
-  description = "Enable Cloud Run deployment"
-  type        = bool
-  default     = true
-}
 
 #
 # Optional configuration
@@ -155,8 +138,8 @@ variable "pubsub_exactly_once" {
 # Enable hierarchical namespace GCS buckets
 variable "hsn_bucket" {
   description = "Enable hierarchical namespace GCS buckets"
-  type        = bool
-  default     = false
+  type = bool
+  default = false
 }
 
 
@@ -198,4 +181,3 @@ variable "dataset_id" {
   type        = string
   default     = "pubsub_msgs"
 }
-

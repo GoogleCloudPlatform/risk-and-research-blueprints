@@ -42,7 +42,7 @@ locals {
 
   kubeconfig_script = join("\n", [
     "export KUBECONFIG=\"${path.root}/generated/kubeconfig_${var.cluster_name}.yaml\"",
-    "gcloud container clusters get-credentials ${var.cluster_name} --project=${var.project_id} --region=${var.region} --overwrite",
+    "gcloud container clusters get-credentials ${var.cluster_name} --project=${var.project_id} --region=${var.region}",
     "mv -f \"${path.root}/generated/kubeconfig_${var.cluster_name}.yaml.${var.cluster_name}\" \"${path.root}/generated/kubeconfig_${var.cluster_name}.yaml\"",
   ])
 

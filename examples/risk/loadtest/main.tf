@@ -64,11 +64,8 @@ locals {
   ui_config_file = yamlencode({
     "project_id" : var.project_id,
     "region" : module.default_region.default_region,
-    "region" : module.default_region.default_region,
     "pubsub_summary_table" : "${google_bigquery_table.messages_summary.project}.${google_bigquery_table.messages_summary.dataset_id}.${google_bigquery_table.messages_summary.table_id}",
     "urls" : {
-      "dashboard" = module.gke.monitoring_dashboard_url
-      "cluster"   = module.gke.cluster_urls
       "dashboard" = module.gke.monitoring_dashboard_url
       "cluster"   = module.gke.cluster_urls
     },
@@ -78,14 +75,10 @@ locals {
           "name" = "GKE ${config.name}",
           # "script"      = module.gke.first_test_script[config.name],
           "script"      = module.gke.test_scripts_list[0],
-          "name" = "GKE ${config.name}",
-          # "script"      = module.gke.first_test_script[config.name],
-          "script"      = module.gke.test_scripts_list[0],
           "parallel"    = config.parallel,
           "description" = config.description,
         }
       ],
-      (!var.cloudrun_enabled || length(module.cloudrun) == 0) ? [] : [
       (!var.cloudrun_enabled || length(module.cloudrun) == 0) ? [] : [
         for config in local.test_configs : {
           "name"        = "Cloud Run ${config.name}",
@@ -104,15 +97,6 @@ module "default_region" {
 }
 
 module "infrastructure" {
-  source                   = "../../infrastructure"
-  project_id               = var.project_id
-  regions                  = var.regions
-  clusters_per_region      = var.clusters_per_region
-  parallelstore_enabled    = var.parallelstore_enabled
-  deployment_type          = var.deployment_type
-  scaled_control_plane     = var.scaled_control_plane
-  cluster_max_cpus         = var.cluster_max_cpus
-  cluster_max_memory       = var.cluster_max_memory
   source                   = "../../infrastructure"
   project_id               = var.project_id
   regions                  = var.regions
@@ -159,11 +143,9 @@ module "agent" {
 module "cloudrun" {
   source = "../agent/modules/run"
   count  = var.cloudrun_enabled ? 1 : 0
-  count  = var.cloudrun_enabled ? 1 : 0
   # var.bq_dataset is defined?
 
   project_id  = var.project_id
-  region      = module.default_region.default_region
   region      = module.default_region.default_region
   agent_image = module.agent.status["agent"].image
 
@@ -192,7 +174,6 @@ module "gke" {
 
   project_id  = var.project_id
   regions     = var.regions
-  regions     = var.regions
   agent_image = module.agent.status["agent"].image
   # GCS specific options
   hsn_bucket = var.hsn_bucket
@@ -211,9 +192,9 @@ module "gke" {
   test_configs           = local.test_configs_dict
 
   # Parallelstore Config
-  parallelstore_enabled   = var.parallelstore_enabled
+  parallelstore_enabled = var.parallelstore_enabled
   parallelstore_instances = module.infrastructure.parallelstore_instances
-  vpc_name                = module.infrastructure.vpc.name
+  vpc_name = module.infrastructure.vpc.name
 }
 
 #
@@ -226,12 +207,8 @@ module "gke" {
 resource "google_logging_project_bucket_config" "analytics-enabled-bucket" {
   project          = var.project_id
   location         = module.default_region.default_region
-  location         = module.default_region.default_region
   enable_analytics = true
   bucket_id        = "applogs"
-  lifecycle {
-    ignore_changes = [project]
-  }
   lifecycle {
     ignore_changes = [project]
   }
@@ -280,10 +257,6 @@ resource "google_bigquery_table" "log_stats" {
   dataset_id          = google_bigquery_dataset.main.dataset_id
   table_id            = "log_stats"
   deletion_protection = false
-  project             = var.project_id
-  dataset_id          = google_bigquery_dataset.main.dataset_id
-  table_id            = "log_stats"
-  deletion_protection = false
 
   view {
     query = templatefile(
@@ -297,10 +270,6 @@ resource "google_bigquery_table" "log_stats" {
 
 # Collect agent statistics
 resource "google_bigquery_table" "agent_stats" {
-  project             = var.project_id
-  dataset_id          = google_bigquery_dataset.main.dataset_id
-  table_id            = "agent_stats"
-  deletion_protection = false
   project             = var.project_id
   dataset_id          = google_bigquery_dataset.main.dataset_id
   table_id            = "agent_stats"
@@ -319,10 +288,6 @@ resource "google_bigquery_table" "agent_stats" {
 
 # Summarise agent statistics by instance
 resource "google_bigquery_table" "agent_summary_by_instance" {
-  project             = var.project_id
-  dataset_id          = google_bigquery_dataset.main.dataset_id
-  table_id            = "agent_summary_by_instance"
-  deletion_protection = false
   project             = var.project_id
   dataset_id          = google_bigquery_dataset.main.dataset_id
   table_id            = "agent_summary_by_instance"
@@ -351,35 +316,7 @@ module "bigquery_capture" {
   bigquery_dataset           = google_bigquery_dataset.main.dataset_id
   bigquery_table             = "pubsub_messages"
   subscriber_service_account = google_service_account.bq_write_service_account.email
-  source                     = "../../../terraform/modules/pubsub-subscriptions"
-  project_id                 = var.project_id
-  region                     = module.default_region.default_region
-  bigquery_dataset           = google_bigquery_dataset.main.dataset_id
-  bigquery_table             = "pubsub_messages"
-  subscriber_service_account = google_service_account.bq_write_service_account.email
   topics = concat(
-    var.cloudrun_enabled && length(module.cloudrun) > 0 ? module.cloudrun[0].topics : [],
-    length(module.gke) > 0 ? module.gke.topics : []
-  )
-}
-
-resource "google_pubsub_topic_iam_member" "topic_subscriber" {
-  for_each = toset(concat(
-    var.cloudrun_enabled && length(module.cloudrun) > 0 ? module.cloudrun[0].topics : [],
-    length(module.gke) > 0 ? module.gke.topics : []
-  ))
-
-  project = var.project_id
-  topic   = each.value
-  role    = "roles/pubsub.subscriber"
-  member  = "serviceAccount:${google_service_account.bq_write_service_account.email}"
-}
-
-resource "google_service_account" "bq_write_service_account" {
-  project      = var.project_id
-  account_id   = "pubsub-bigquery-writer"
-  display_name = "BQ Write Service Account"
-}
     var.cloudrun_enabled && length(module.cloudrun) > 0 ? module.cloudrun[0].topics : [],
     length(module.gke) > 0 ? module.gke.topics : []
   )
@@ -414,13 +351,6 @@ resource "google_service_account" "bq_write_service_account" {
 #   quota_contact_email = var.quota_contact_email
 #   project_id          = var.project_id
 # }
-# module "quota" {
-#   count               = var.additional_quota_enabled ? 1 : 0
-#   source              = "../../../terraform/modules/quota"
-#   region              = var.region
-#   quota_contact_email = var.quota_contact_email
-#   project_id          = var.project_id
-# }
 
 #
 # Create views for Data Studio
@@ -428,10 +358,6 @@ resource "google_service_account" "bq_write_service_account" {
 
 # Pub/Sub messages joined by request/response
 resource "google_bigquery_table" "messages_joined" {
-  project             = var.project_id
-  dataset_id          = google_bigquery_dataset.main.dataset_id
-  table_id            = "pubsub_messages_joined"
-  deletion_protection = false
   project             = var.project_id
   dataset_id          = google_bigquery_dataset.main.dataset_id
   table_id            = "pubsub_messages_joined"
@@ -454,10 +380,6 @@ resource "google_bigquery_table" "messages_joined" {
 
 # Pub/Sub summary by job
 resource "google_bigquery_table" "messages_summary" {
-  project             = var.project_id
-  dataset_id          = google_bigquery_dataset.main.dataset_id
-  table_id            = "pubsub_messages_summary"
-  deletion_protection = false
   project             = var.project_id
   dataset_id          = google_bigquery_dataset.main.dataset_id
   table_id            = "pubsub_messages_summary"
@@ -489,22 +411,8 @@ resource "local_file" "test_scripts" {
       [for script in module.gke.test_scripts_list : script if strcontains(script, replace(config.name, "_", "-"))]
     ) if length(module.gke) > 0
   }
-  for_each = (var.scripts_output == "") ? {} : {
-    for config in local.test_configs : "gke_${config.name}.sh" => join("\n\n",
-      [for script in module.gke.test_scripts_list : script if strcontains(script, replace(config.name, "_", "-"))]
-    ) if length(module.gke) > 0
-  }
   filename = "${var.scripts_output}/${each.key}"
   content  = each.value
-}
-
-resource "local_file" "test_scripts_cloudrun" {
-  for_each = (var.scripts_output == "" || !var.cloudrun_enabled) ? {} : {
-    for k, v in module.cloudrun[0].test_scripts : "run_${k}.sh" => v
-    if length(module.cloudrun) > 0
-  }
-  content  = each.value
-  filename = "${var.scripts_output}/${each.key}"
 }
 
 resource "local_file" "test_scripts_cloudrun" {
@@ -528,10 +436,6 @@ module "ui_image" {
 
   source = "../../../terraform/modules/builder"
 
-  project_id        = var.project_id
-  region            = module.default_region.default_region
-  repository_region = module.infrastructure.artifact_registry.location
-  repository_id     = module.infrastructure.artifact_registry.name
   project_id        = var.project_id
   region            = module.default_region.default_region
   repository_region = module.infrastructure.artifact_registry.location

@@ -36,7 +36,7 @@ import (
 func NewPubSubGenerator(src *Source, stats *stats.StatsConfig, google *gcp.GoogleConfig) *cobra.Command {
 
 	jsonPubSub := true
-	maxMessagesOutstanding := 1000
+	maxMessagesOutstanding := 250000
 	cmd := &cobra.Command{
 		Use:   "pubsub <topic> [subscription]",
 		Short: "Pubsub roundtrip throughput and latency tests",

@@ -93,6 +93,12 @@ variable "deployment_type" {
   default     = "SCRATCH"
 }
 
+variable "parallelstore_zone" {
+  description = "The zone to host the parallelstore instance in e.g. a, b or c"
+  type        = string
+  default     = null
+}
+
 # Enable/disable initial deployment of a large nodepool for control plane nodes (default: false)
 variable "scaled_control_plane" {
   type        = bool

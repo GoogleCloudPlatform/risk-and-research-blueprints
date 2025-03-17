@@ -118,6 +118,13 @@ variable "deployment_type" {
   type        = string
   default     = "SCRATCH"
 }
+
+variable "parallelstore_zone" {
+  description = "The zone to host the parallelstore instance in e.g. a, b or c"
+  type        = string
+  default     = null
+}
+
 # Artifact Registry
 
 variable "artifact_registry_name" {

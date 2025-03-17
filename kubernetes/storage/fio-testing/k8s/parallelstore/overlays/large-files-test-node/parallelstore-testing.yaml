@@ -15,41 +15,55 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: ${job_name}
+  name: fio-test-parallelstore
+  labels:
+    app: fio-test-parallelstore
 spec:
-  parallelism: ${parallel}
-  ttlSecondsAfterFinished: 30
-  backoffLimit: 5
+  completionMode: Indexed
+  backoffLimitPerIndex: 10
+  completions: 1
+  parallelism: 1
+  ttlSecondsAfterFinished: 120
   template:
     metadata:
       labels:
-        app: ${job_name}
+        app: fio-test-parallelstore
     spec:
+      terminationGracePeriodSeconds: 60
       nodeSelector:
         cloud.google.com/compute-class: spot-capacity
-      priorityClassName: higher-priority
+      priorityClassName: default-priority
+      restartPolicy: Never
       containers:
-      - name: ${container_name}
-        image: ${image}
-        workingDir: /data
-        args: ${jsonencode(args)}
+      - name: fio
+        image: fio
         resources:
-          requests:
-            memory: "1Gi"
-            cpu: "900m"
           limits:
             cpu: "2"
-            memory: "2Gi"
+            memory: 8Gi
+          requests:
+            cpu: "1"
+            memory: 4Gi
+        env:
+        - name: MOUNT_PATH
+          value: /data
+        - name: TEST_DIR
+          value: test_files
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: CONFIG_PATH
+          value: /etc/fio/fio.conf
         volumeMounts:
         - name: parallelstore-volume
           mountPath: /data
-        env:
-        - name: K8S_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
-      restartPolicy: Never
+        - name: fio-config
+          mountPath: /etc/fio
       volumes:
       - name: parallelstore-volume
         persistentVolumeClaim:
-          claimName: parallelstore-pvc-${location}
+          claimName: parallelstore-pvc
+      - name: fio-config
+        configMap:
+          name: parallelstore-fio-config

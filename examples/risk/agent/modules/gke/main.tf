@@ -153,8 +153,8 @@ module "config_apply" {
   # set this to empty string if not enabled
   pubsub_hpa_request = local.enable_hpa == 1 ? google_pubsub_subscription.subscription[var.gke_hpa_request].name : ""
   pubsub_job_request = local.enable_jobs == 1 ? google_pubsub_subscription.subscription[var.gke_job_request].name : ""
-  # Parallelstore Config
 
+  # Parallelstore Config
   parallelstore_enabled = var.parallelstore_enabled
   parallelstore_access_points = var.parallelstore_enabled ? join(",", var.parallelstore_instances[each.value.region].access_points) : null
   parallelstore_vpc_name = var.parallelstore_enabled ? var.vpc_name : null 

@@ -107,6 +107,7 @@ module "infrastructure" {
   cluster_max_cpus         = var.cluster_max_cpus
   cluster_max_memory       = var.cluster_max_memory
   additional_quota_enabled = var.additional_quota_enabled
+  parallelstore_zone       = var.parallelstore_zone
 }
 
 #

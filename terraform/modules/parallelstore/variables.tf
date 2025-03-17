@@ -28,6 +28,12 @@ variable "region" {
   default     = "us-central1"
 }
 
+variable "zone" {
+  description = "The zone to host the cluster in e.g. a, b or c"
+  type        = string
+  default     = null
+}
+
 variable "network" {
   description = "The vpc the cluster should be deployed to"
   type        = string
@@ -39,3 +45,4 @@ variable "deployment_type" {
   type        = string
   default     = "SCRATCH"
 }
+

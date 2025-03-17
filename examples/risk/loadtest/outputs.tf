@@ -67,3 +67,12 @@ output "ui_image" {
 #     }
 #   }
 # }
+
+output "cluster_service_account" {
+  description = "The service account used by GKE clusters"
+  value = {
+    email = module.infrastructure.cluster_service_account.email
+    id    = module.infrastructure.cluster_service_account.id
+    name  = module.infrastructure.cluster_service_account.name
+  }
+}

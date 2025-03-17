@@ -18,30 +18,12 @@ data "google_project" "environment" {
 
 locals {
   region_number = index(var.regions, var.region)
-
-  dynamic_region_indices = { for region in var.regions : region => "region-${index(var.regions, region)}" }
-
   network_cidrs = {
-    nodes = cidrsubnet("10.0.0.0/8", 8, local.region_number)
-    pods = {
-      "region-0" = "172.16.0.0/12"
-      "region-1" = "172.32.0.0/12"
-      "region-2" = "172.48.0.0/12"
-      "region-3" = "172.64.0.0/12"
-    }[local.dynamic_region_indices[var.region]]
-    services = cidrsubnet("192.168.0.0/16", 6, local.region_number)
-  }
-
-  capacity = {
-    max_nodes_per_region    = 65536   # /16
-    max_pods_per_region     = 1048574 # /12
-    max_services_per_region = 1024    # /22
-
-    max_nodes_per_cluster    = floor(65536 / 4) # 16384 nodes
-    max_pods_per_cluster     = 524288           # Adjust as needed, within /12 limit
-    max_services_per_cluster = floor(1024 / 4)  # 256 services
-
-    max_supported_regions = 4
+    # Each region gets a distinct /12 for pods, starting from 10.0.0.0
+    pods = cidrsubnet("10.0.0.0/8", 4, local.region_number)
+    # Nodes get a /16 from the second half of the 10.0.0.0/8 range (starting at 10.128.0.0)
+    nodes = cidrsubnet("10.128.0.0/9", 7, local.region_number)
+    services = cidrsubnet("192.168.0.0/16", 6, local.region_number) # /22 for services
   }
 }
 

@@ -92,6 +92,7 @@ module "parallelstore" {
   project_id      = data.google_project.environment.project_id
   region          = each.key
   network         = google_compute_network.research-vpc.id
+  zone            = var.parallelstore_zone
   deployment_type = var.deployment_type
   depends_on = [
     google_service_networking_connection.default,
@@ -142,6 +143,7 @@ resource "google_compute_global_address" "parallelstore_range" {
   address_type  = "INTERNAL"
   prefix_length = 16
   network       = google_compute_network.research-vpc.id
+  address       = "172.16.0.0"
 }
 
 # resource "google_compute_network_peering" "parallelstore" {

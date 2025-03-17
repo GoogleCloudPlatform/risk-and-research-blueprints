@@ -32,8 +32,8 @@ resource "random_shuffle" "zone" {
 resource "google_parallelstore_instance" "parallelstore" {
   project         = var.project_id
   provider        = google-beta
-  instance_id     = "parallelstore-${random_shuffle.zone.result[0]}"
-  location        = random_shuffle.zone.result[0]
+  instance_id     = var.zone == null ? "parallelstore-${random_shuffle.zone.result[0]}" : "parallelstore-${var.region}-${var.zone}"
+  location        = var.zone == null ? random_shuffle.zone.result[0] : "${var.region}-${var.zone}"
   capacity_gib    = var.deployment_type == "PERSISTENT" ? 27000 : 12000
   network         = var.network
   deployment_type = var.deployment_type

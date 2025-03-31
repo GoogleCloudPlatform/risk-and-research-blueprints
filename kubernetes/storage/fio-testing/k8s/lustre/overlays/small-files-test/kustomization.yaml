@@ -18,7 +18,7 @@ kind: Kustomization
 resources:
 - ../../base/
 - fio-config.yaml
-- parallelstore-testing.yaml
+- lustre-testing.yaml
 
 images:
 - name: fio
@@ -27,24 +27,23 @@ images:
 
 configMapGenerator:
 - literals:
-  - JOB_NAME=500-large-files
-  - COMPLETIONS=50000
-  - PARALLELISM=30000
+  - JOB_NAME=lustre-run-1-small
+  - COMPLETIONS=1
+  - PARALLELISM=1
   - PROJECT_ID=fsi-research-1
-  - LOCATION=us-east4-b
-  - INSTANCE_NAME=parallelstore-us-east4-b
-  - STORAGE_SIZE=12000Gi
-  - ACCESS_POINTS=172.16.0.132, 172.16.0.131, 172.16.0.130
-  - NETWORK=research-vpc
-  - MOUNT_LOCALITY=node
-  - TEST_DIR=test_files/large_files
+  - LOCATION=us-central1-a
+  - INSTANCE_NAME=lustre-us-central1-a
+  - STORAGE_SIZE=16Ti
+  - INSTANCE_IP=172.16.1.3
+  - FILESYSTEM=testfs
+  - TEST_DIR=test_files/small_files
   - MOUNT_PATH=/data
-  name: parallelstore-vars
+  name: lustre-vars
 
 replacements:
 - source:
     kind: ConfigMap
-    name: parallelstore-vars
+    name: lustre-vars
     fieldPath: data.JOB_NAME
   targets:
   - select:
@@ -53,7 +52,7 @@ replacements:
     - metadata.name
 - source:
     kind: ConfigMap
-    name: parallelstore-vars
+    name: lustre-vars
     fieldPath: data.STORAGE_SIZE
   targets:
   - select:
@@ -66,7 +65,19 @@ replacements:
     - spec.resources.requests.storage
 - source:
     kind: ConfigMap
-    name: parallelstore-vars
+    name: lustre-vars
+    fieldPath: data.LOCATION
+  targets:
+  - select:
+      kind: PersistentVolumeClaim
+    fieldPaths:
+    - spec.volumeName
+    options:
+      delimiter: '-'
+      index: 2
+- source:
+    kind: ConfigMap
+    name: lustre-vars
     fieldPath: data.TEST_DIR
   targets:
   - select:
@@ -75,7 +86,7 @@ replacements:
     - spec.template.spec.containers.[name=fio].env.[name=TEST_DIR].value
 - source:
     kind: ConfigMap
-    name: parallelstore-vars
+    name: lustre-vars
     fieldPath: data.MOUNT_PATH
   targets:
   - select:
@@ -84,47 +95,36 @@ replacements:
     - spec.template.spec.containers.[name=fio].env.[name=MOUNT_PATH].value
 - source:
     kind: ConfigMap
-    name: parallelstore-vars
+    name: lustre-vars
     fieldPath: data.MOUNT_PATH
   targets:
   - select:
       kind: Job
     fieldPaths:
-    - spec.template.spec.containers.[name=fio].volumeMounts.[name=parallelstore-volume].mountPath
+    - spec.template.spec.containers.[name=fio].volumeMounts.[name=lustre-volume].mountPath
 - source:
     kind: ConfigMap
-    name: parallelstore-vars
-    fieldPath: data.ACCESS_POINTS
+    name: lustre-vars
+    fieldPath: data.INSTANCE_IP
   targets:
   - select:
       kind: PersistentVolume
     fieldPaths:
-    - spec.csi.volumeAttributes.accessPoints
-
+    - spec.csi.volumeAttributes.ip
 - source:
     kind: ConfigMap
-    name: parallelstore-vars
-    fieldPath: data.NETWORK
+    name: lustre-vars
+    fieldPath: data.FILESYSTEM
   targets:
   - select:
       kind: PersistentVolume
     fieldPaths:
-    - spec.csi.volumeAttributes.network
-
-- source:
-    kind: ConfigMap
-    name: parallelstore-vars
-    fieldPath: data.MOUNT_LOCALITY
-  targets:
-  - select:
-      kind: PersistentVolume
-    fieldPaths:
-    - spec.csi.volumeAttributes.mountLocality
+    - spec.csi.volumeAttributes.filesystem
 
 # Volume handle specific replacement
 - source:
     kind: ConfigMap
-    name: parallelstore-vars
+    name: lustre-vars
     fieldPath: data.PROJECT_ID
   targets:
   - select:
@@ -136,7 +136,7 @@ replacements:
       index: 0
 - source:
     kind: ConfigMap
-    name: parallelstore-vars
+    name: lustre-vars
     fieldPath: data.LOCATION
   targets:
   - select:
@@ -148,7 +148,7 @@ replacements:
       index: 1
 - source:
     kind: ConfigMap
-    name: parallelstore-vars
+    name: lustre-vars
     fieldPath: data.INSTANCE_NAME
   targets:
   - select:
@@ -160,7 +160,7 @@ replacements:
       index: 2
 - source:
     kind: ConfigMap
-    name: parallelstore-vars
+    name: lustre-vars
     fieldPath: data.LOCATION
   targets:
   - select:
@@ -172,51 +172,32 @@ replacements:
       index: 2
 - source:
     kind: ConfigMap
-    name: parallelstore-vars
+    name: lustre-vars
     fieldPath: data.LOCATION
   targets:
   - select:
       kind: PersistentVolumeClaim
     fieldPaths:
     - metadata.name
-    options:
-      delimiter: '-'
-      index: 2
-- source:
-    kind: ConfigMap
-    name: parallelstore-vars
-    fieldPath: data.LOCATION
-  targets:
-  - select:
-      kind: PersistentVolumeClaim
-    fieldPaths:
-    - spec.storageClassName
-    options:
-      delimiter: '-'
-      index: 2
-  - select:
-      kind: PersistentVolume
-    fieldPaths:
-    - spec.storageClassName
     options:
       delimiter: '-'
       index: 2
 
 - source:
     kind: ConfigMap
-    name: parallelstore-vars
+    name: lustre-vars
     fieldPath: data.LOCATION
   targets:
   - select:
       kind: Job
     fieldPaths:
-    - spec.template.spec.volumes.[name=parallelstore-volume].persistentVolumeClaim.claimName
+    - spec.template.spec.volumes.[name=lustre-volume].persistentVolumeClaim.claimName
     options:
       delimiter: '-'
       index: 2
 - source:
     kind: ConfigMap
-    name: parallelstore-vars
+    name: lustre-vars
     fieldPath: data.COMPLETIONS
   targets:
   - select:
@@ -225,7 +206,7 @@ replacements:
     - spec.completions
 - source:
     kind: ConfigMap
-    name: parallelstore-vars
+    name: lustre-vars
     fieldPath: data.PARALLELISM
   targets:
   - select:

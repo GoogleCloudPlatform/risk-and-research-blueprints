@@ -17,15 +17,10 @@ kind: Deployment
 metadata:
   name: balloon-deployment
 spec:
-  replicas: 35000
+  replicas: 1
   selector:
     matchLabels:
       app: balloon-pod
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 1000
-      maxUnavailable: 1000
   template:
     metadata:
       labels:
@@ -34,11 +29,10 @@ spec:
       priorityClassName: placeholder-priority
       nodeSelector:
         cloud.google.com/compute-class: spot-capacity
-      restartPolicy: Always
       containers:
       - name: balloon-container
         image: busybox
-        command: ["sleep","infinity"]
+        command: ["sleep", "infinity"]
         resources:
           requests:
             cpu: "1"
@@ -46,3 +40,11 @@ spec:
           limits:
             cpu: "1"
             memory: "128Mi"
+        volumeMounts:
+          - mountPath: /data
+            name: parallelstore-volume
+      volumes:
+        - name: parallelstore-volume
+          persistentVolumeClaim:
+            claimName: parallelstore-pvc-us-east4-b
+            # claimName: parallelstore-pvc-us-central1-b

@@ -45,4 +45,3 @@ variable "deployment_type" {
   type        = string
   default     = "SCRATCH"
 }
-

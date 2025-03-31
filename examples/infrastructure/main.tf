@@ -68,21 +68,24 @@ module "gke_standard" {
       ]
     ]) : entry.key => entry
   }
-  cluster_index           = each.value.cluster_index
-  cluster_name            = "${var.gke_standard_cluster_name}-${each.value.region}-${each.value.cluster_index}"
-  project_id              = data.google_project.environment.project_id
-  region                  = each.value.region
-  zones                   = var.zones
-  network                 = google_compute_network.research-vpc.id
-  subnet                  = module.networking[each.value.region].subnet_id
-  ip_range_services       = module.networking[each.value.region].service_range_name
-  ip_range_pods           = module.networking[each.value.region].pod_range_name
-  depends_on              = [google_service_account.cluster_service_account, module.project, module.networking]
-  scaled_control_plane    = var.scaled_control_plane
-  artifact_registry       = module.artifact_registry.artifact_registry
-  cluster_max_cpus        = var.cluster_max_cpus
-  cluster_max_memory      = var.cluster_max_memory
-  cluster_service_account = google_service_account.cluster_service_account
+  cluster_index            = each.value.cluster_index
+  cluster_name             = "${var.gke_standard_cluster_name}-${each.value.region}-${each.value.cluster_index}"
+  project_id               = data.google_project.environment.project_id
+  region                   = each.value.region
+  zones                    = var.zones
+  network                  = google_compute_network.research-vpc.id
+  subnet                   = module.networking[each.value.region].subnet_id
+  ip_range_services        = module.networking[each.value.region].service_range_name
+  ip_range_pods            = module.networking[each.value.region].pod_range_name
+  depends_on               = [google_service_account.cluster_service_account, module.project, module.networking]
+  scaled_control_plane     = var.scaled_control_plane
+  artifact_registry        = module.artifact_registry.artifact_registry
+  cluster_max_cpus         = var.cluster_max_cpus
+  cluster_max_memory       = var.cluster_max_memory
+  cluster_service_account  = google_service_account.cluster_service_account
+  enable_csi_filestore     = var.enable_csi_filestore
+  enable_csi_gcs_fuse      = var.enable_csi_gcs_fuse
+  enable_csi_parallelstore = var.enable_csi_parallelstore
 }
 
 # Create a Parallestore Instance
@@ -145,14 +148,6 @@ resource "google_compute_global_address" "parallelstore_range" {
   network       = google_compute_network.research-vpc.id
   address       = "172.16.0.0"
 }
-
-# resource "google_compute_network_peering" "parallelstore" {
-#   name         = "servicenetworking-googleapis-com"
-#   network      = google_compute_network.research-vpc.id
-#   peer_network = "projects/${var.project_id}/global/networks/servicenetworking-googleapis-com"
-#   export_subnet_routes_with_public_ip = true
-#   import_subnet_routes_with_public_ip = true
-# }
 
 # TODO: This is a Hack until we can do this in terraform
 resource "null_resource" "update_peering_routes" {

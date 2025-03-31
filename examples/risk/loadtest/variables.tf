@@ -127,6 +127,24 @@ variable "additional_quota_enabled" {
   default     = false
 }
 
+variable "enable_csi_parallelstore" {
+  description = "Enable the Parallelstore CSI Driver"
+  type        = bool
+  default     = true
+}
+
+variable "enable_csi_filestore" {
+  description = "Enable the Filestore CSI Driver"
+  type        = bool
+  default     = false
+}
+
+variable "enable_csi_gcs_fuse" {
+  description = "Enable the GCS Fuse CSI Driver"
+  type        = bool
+  default     = true
+}
+
 # Contact email for Quota requests
 variable "quota_contact_email" {
   description = "Your contact email for the quota request"
@@ -144,8 +162,8 @@ variable "pubsub_exactly_once" {
 # Enable hierarchical namespace GCS buckets
 variable "hsn_bucket" {
   description = "Enable hierarchical namespace GCS buckets"
-  type = bool
-  default = false
+  type        = bool
+  default     = false
 }
 
 

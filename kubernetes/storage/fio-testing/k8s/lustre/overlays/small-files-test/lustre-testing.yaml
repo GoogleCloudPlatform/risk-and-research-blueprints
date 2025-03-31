@@ -15,9 +15,9 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: fio-test-parallelstore
+  name: fio-test-lustre
   labels:
-    app: fio-test-parallelstore
+    app: fio-test-lustre
 spec:
   completionMode: Indexed
   backoffLimitPerIndex: 10
@@ -26,20 +26,12 @@ spec:
   ttlSecondsAfterFinished: 120
   template:
     metadata:
-      annotations:
-        gke-parallelstore/volumes: "true"
-        gke-parallelstore/cpu-request: 500m
-        gke-parallelstore/memory-request: 1Gi
-        gke-parallelstore/ephemeral-storage-request: 500Mi
-        gke-parallelstore/cpu-limit: 1000m
-        gke-parallelstore/memory-limit: 2Gi
-        gke-parallelstore/ephemeral-storage-limit: 1Gi
       labels:
-        app: fio-test-parallelstore
+        app: fio-test-lustre
     spec:
       terminationGracePeriodSeconds: 60
-      nodeSelector:
-        cloud.google.com/compute-class: spot-capacity
+      # nodeSelector:
+      #   cloud.google.com/compute-class: spot-capacity
       priorityClassName: default-priority
       restartPolicy: Never
       containers:
@@ -64,14 +56,14 @@ spec:
         - name: CONFIG_PATH
           value: /etc/fio/fio.conf
         volumeMounts:
-        - name: parallelstore-volume
+        - name: lustre-volume
           mountPath: /data
         - name: fio-config
           mountPath: /etc/fio
       volumes:
-      - name: parallelstore-volume
+      - name: lustre-volume
         persistentVolumeClaim:
-          claimName: parallelstore-pvc
+          claimName: lustre-pvc
       - name: fio-config
         configMap:
-          name: parallelstore-fio-config
+          name: lustre-fio-config

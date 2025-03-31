@@ -103,6 +103,23 @@ variable "cluster_max_memory" {
   description = "Max memory in cluster autoscaling resource limits"
 }
 
+variable "enable_csi_parallelstore" {
+  description = "Enable the Parallelstore CSI Driver"
+  type        = bool
+  default     = true
+}
+
+variable "enable_csi_filestore" {
+  description = "Enable the Filestore CSI Driver"
+  type        = bool
+  default     = false
+}
+
+variable "enable_csi_gcs_fuse" {
+  description = "Enable the GCS Fuse CSI Driver"
+  type        = bool
+  default     = true
+}
 
 # Parallelstore
 

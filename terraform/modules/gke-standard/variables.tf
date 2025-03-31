@@ -104,3 +104,21 @@ variable "cluster_index" {
     error_message = "cluster_index must be between 0 and 3"
   }
 }
+
+variable "enable_csi_parallelstore" {
+  description = "Enable the Parallelstore CSI Driver"
+  type        = bool
+  default     = true
+}
+
+variable "enable_csi_filestore" {
+  description = "Enable the Filestore CSI Driver"
+  type        = bool
+  default     = false
+}
+
+variable "enable_csi_gcs_fuse" {
+  description = "Enable the GCS Fuse CSI Driver"
+  type        = bool
+  default     = true
+}

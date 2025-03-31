@@ -108,6 +108,9 @@ module "infrastructure" {
   cluster_max_memory       = var.cluster_max_memory
   additional_quota_enabled = var.additional_quota_enabled
   parallelstore_zone       = var.parallelstore_zone
+  enable_csi_filestore     = var.enable_csi_filestore
+  enable_csi_gcs_fuse      = var.enable_csi_gcs_fuse
+  enable_csi_parallelstore = var.enable_csi_parallelstore
 }
 
 #
@@ -193,9 +196,9 @@ module "gke" {
   test_configs           = local.test_configs_dict
 
   # Parallelstore Config
-  parallelstore_enabled = var.parallelstore_enabled
+  parallelstore_enabled   = var.parallelstore_enabled
   parallelstore_instances = module.infrastructure.parallelstore_instances
-  vpc_name = module.infrastructure.vpc.name
+  vpc_name                = module.infrastructure.vpc.name
 }
 
 #

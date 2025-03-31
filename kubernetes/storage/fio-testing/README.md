@@ -22,12 +22,17 @@ The setup includes:
 *   A Parallelstore instance for testing
 *   A Docker registry (e.g., Google Container Registry) to push the built Docker image.
 
+    ```bash
+    export PROJECT_ID=YOUR_PROJECT_ID
+    export REGISTRY=YOUR_REGISTRY_NAME
+    ```
+
 ### Building and Deploying
 
 1.  **Build the Docker image:**
 
     ```bash
-    docker build -t us-docker.pkg.dev/PROJECT_ID/REGISTRY/fio:latest .
+    docker build -t us-docker.pkg.dev/$PROJECT_ID/$REGISTRY/fio:latest .
     ```
 
     Replace `us-docker.pkg.dev/PROJECT_ID/REGISTRY/fio:latest` with your desired image name and tag.
@@ -35,7 +40,7 @@ The setup includes:
 2.  **Push the Docker image to your registry:**
 
     ```bash
-    docker push us-docker.pkg.dev/PROJECT_ID/REGISTRY/fio:latest
+    docker push us-docker.pkg.dev/$PROJECT_ID/$REGISTRY/fio:latest
     ```
 3.  **Add your variables:**
 

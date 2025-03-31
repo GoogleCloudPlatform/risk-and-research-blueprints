@@ -160,10 +160,10 @@ resource "google_container_cluster" "risk-research" {
 
   addons_config {
     gcp_filestore_csi_driver_config {
-      enabled = true
+      enabled = var.enable_csi_filestore
     }
     gcs_fuse_csi_driver_config {
-      enabled = true
+      enabled = var.enable_csi_gcs_fuse
     }
     gce_persistent_disk_csi_driver_config {
       enabled = true
@@ -172,7 +172,7 @@ resource "google_container_cluster" "risk-research" {
       enabled = true
     }
     parallelstore_csi_driver_config {
-      enabled = true
+      enabled = var.enable_csi_parallelstore
     }
   }
 
@@ -254,7 +254,7 @@ resource "google_container_cluster" "risk-research" {
     }
   }
   release_channel {
-    channel = "REGULAR"
+    channel = "RAPID"
   }
 
   secret_manager_config {
@@ -338,18 +338,18 @@ resource "google_container_node_pool" "primary_ondemand_nodes" {
 }
 
 resource "google_container_node_pool" "primary_spot_nodes" {
-  name               = "spot-nodes-1"
-  provider           = google-beta
-  project            = var.project_id
-  location           = var.region
-  cluster            = google_container_cluster.risk-research.name
-  node_locations     = [random_shuffle.zone.result[0], random_shuffle.zone.result[1], random_shuffle.zone.result[2]]
+  name           = "spot-nodes-1"
+  provider       = google-beta
+  project        = var.project_id
+  location       = var.region
+  cluster        = google_container_cluster.risk-research.name
+  node_locations = [random_shuffle.zone.result[0], random_shuffle.zone.result[1], random_shuffle.zone.result[2]]
   # max_pods_per_node = 64
   initial_node_count = 5
 
   autoscaling {
     location_policy      = "ANY"
-    total_min_node_count = 5
+    total_min_node_count = 1
     total_max_node_count = 3000
   }
 

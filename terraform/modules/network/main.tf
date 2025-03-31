@@ -22,7 +22,7 @@ locals {
     # Each region gets a distinct /12 for pods, starting from 10.0.0.0
     pods = cidrsubnet("10.0.0.0/8", 4, local.region_number)
     # Nodes get a /16 from the second half of the 10.0.0.0/8 range (starting at 10.128.0.0)
-    nodes = cidrsubnet("10.128.0.0/9", 7, local.region_number)
+    nodes    = cidrsubnet("10.128.0.0/9", 7, local.region_number)
     services = cidrsubnet("192.168.0.0/16", 6, local.region_number) # /22 for services
   }
 }

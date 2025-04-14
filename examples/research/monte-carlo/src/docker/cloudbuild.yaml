@@ -15,7 +15,7 @@
 steps:
 - name: 'gcr.io/cloud-builders/docker'
   script: |
-    docker build -t us-central1-docker.pkg.dev/$PROJECT_ID/research-images/mc_run .
+    docker build -t us-docker.pkg.dev/$PROJECT_ID/research-images/mc_run .
   automapSubstitutions: true
 images:
-- 'us-central1-docker.pkg.dev/$PROJECT_ID/research-images/mc_run'
+- 'us-docker.pkg.dev/$PROJECT_ID/research-images/mc_run'

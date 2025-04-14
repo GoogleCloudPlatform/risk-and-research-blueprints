@@ -34,3 +34,9 @@ variable "name" {
   type        = string
   default     = "research-images"
 }
+
+variable "cleanup_keep_count" {
+  description = "Number of most recent container image versions to keep in Artifact Registry cleanup policy"
+  type        = number
+  default     = 10
+}

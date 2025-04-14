@@ -13,6 +13,6 @@
 # limitations under the License.
 
 output "analytics_bigquery_dataset_id" {
-  description = "BigQuery log analytics linked dataset"
+  description = "ID of the BigQuery dataset linked to Cloud Logging for log analytics, returned only when log analytics is enabled, used for querying logs and creating dashboards"
   value       = var.enable_log_analytics ? google_logging_linked_dataset.all_logging_linked_dataset[0].bigquery_dataset[0].dataset_id : null
 }

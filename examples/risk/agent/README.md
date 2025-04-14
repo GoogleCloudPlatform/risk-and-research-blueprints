@@ -87,24 +87,7 @@ The following command:
   * Runs the container on the host network (so can connect to the gRPC service)
   * Mounts the local loadtest folder (so it can read the task.jsonl)
   * Runs the "agent file" subcommand with the input and output files.
-  * Configures the gRPc endpoint, service, and method for targeting the gRPC service.
-
-```sh
-docker run \
-  --network host \
-  -v $PWD/../loadtest:/data \
-  agent \
-  agent file /data/tasks.jsonl /data/tasks_output.jsonl \
-  --endpoint http://localhost:2002/main.LoadTestService/RunLibrary
-```
-
-### Running File IO
-
-The following command:
-  * Runs the container on the host network (so can connect to the gRPC service)
-  * Mounts the local loadtest folder (so it can read the task.jsonl)
-  * Runs the "agent file" subcommand with the input and output files.
-  * Configures the gRPc endpoint, service, and method for targeting the gRPC service.
+  * Configures the gRPC endpoint, service, and method for targeting the gRPC service.
 
 ```sh
 docker run \
@@ -167,14 +150,20 @@ gcloud pubsub subscriptions create --topic test-resps test-resps-sub
 ```
 
 ```sh
-
+docker run \
+  --network host \
+  agent \
+  agent pubsub \
+  --sub-name projects/your-project-id/subscriptions/test-reqs-sub \
+  --topic-name projects/your-project-id/topics/test-resps \
+  --endpoint http://localhost:2002/main.LoadTestService/RunLibrary
 ```
 Delete the topics and subscriptions:
 
 ```sh
 gcloud pubsub subscriptions delete test-reqs-sub
 gcloud pubsub topics delete test-reqs
-gcloud pubsub subscriptions delete test-resp-sub
+gcloud pubsub subscriptions delete test-resps-sub
 gcloud pubsub topics delete test-resps
 ```
 

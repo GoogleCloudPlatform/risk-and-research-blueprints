@@ -38,10 +38,9 @@ resource "google_container_cluster" "risk-research" {
   name                = var.cluster_name
   project             = var.project_id
   location            = var.region
-  # datapath_provider   = "ADVANCED_DATAPATH"
-  datapath_provider = "LEGACY_DATAPATH"
-  node_locations    = [random_shuffle.zone.result[0], random_shuffle.zone.result[1], random_shuffle.zone.result[2]]
-  depends_on        = [google_kms_crypto_key_iam_member.gke_crypto_key]
+  datapath_provider   = var.datapath_provider
+  node_locations      = [random_shuffle.zone.result[0], random_shuffle.zone.result[1], random_shuffle.zone.result[2]]
+  depends_on          = [google_kms_crypto_key_iam_member.gke_crypto_key]
 
   # We do this to ensure we have large control plane nodes created initially
   initial_node_count       = var.scaled_control_plane ? 700 : 1
@@ -56,8 +55,8 @@ resource "google_container_cluster" "risk-research" {
   node_config {
     service_account = var.cluster_service_account.email
     shielded_instance_config {
-      enable_secure_boot          = true
-      enable_integrity_monitoring = true
+      enable_secure_boot          = var.enable_secure_boot
+      enable_integrity_monitoring = var.enable_shielded_nodes
     }
     machine_type = "e2-standard-2"
     preemptible  = false
@@ -73,32 +72,35 @@ resource "google_container_cluster" "risk-research" {
 
   private_cluster_config {
     enable_private_nodes    = true
-    enable_private_endpoint = false
+    enable_private_endpoint = var.enable_private_endpoint
     master_ipv4_cidr_block  = cidrsubnet("100.64.0.0/16", 12, index(data.google_compute_regions.available.names, var.region) * 4 + var.cluster_index) # /28 blocks index
-    # TODO - Enabled for easier testing
+    # Enables access to the control plane from any network
     master_global_access_config {
       enabled = true
     }
   }
 
-  # Mainteance only on Weekends
-  # 4am UTC = 12am EST
+  # Custom maintenance window
   maintenance_policy {
     recurring_window {
-      start_time = "2024-09-17T04:00:00Z"
-      end_time   = "2024-09-18T04:00:00Z"
-      recurrence = "FREQ=WEEKLY;BYDAY=SA,SU"
+      start_time = var.maintenance_start_time
+      end_time   = var.maintenance_end_time
+      recurrence = var.maintenance_recurrence
     }
   }
 
-  # enable_intranode_visibility              = true
-  # enable_cilium_clusterwide_network_policy = true
+  enable_intranode_visibility              = var.enable_intranode_visibility
+  enable_cilium_clusterwide_network_policy = var.enable_cilium_clusterwide_network_policy
 
   monitoring_config {
-    # advanced_datapath_observability_config {
-    #   enable_metrics = true
-    #   enable_relay   = false
-    # }
+    # Only enable advanced datapath observability when ADVANCED_DATAPATH is selected
+    dynamic "advanced_datapath_observability_config" {
+      for_each = var.datapath_provider == "ADVANCED_DATAPATH" ? [1] : []
+      content {
+        enable_metrics = var.enable_advanced_datapath_observability_metrics
+        enable_relay   = var.enable_advanced_datapath_observability_relay
+      }
+    }
 
     enable_components = [
       "SYSTEM_COMPONENTS",
@@ -135,9 +137,9 @@ resource "google_container_cluster" "risk-research" {
   }
 
   workload_identity_config {
-    workload_pool = "${var.project_id}.svc.id.goog"
+    workload_pool = var.enable_workload_identity ? "${var.project_id}.svc.id.goog" : null
   }
-  # Adding gcfs_config to enable image streaming on the cluster.
+
   node_pool_defaults {
 
     node_config_defaults {
@@ -150,7 +152,7 @@ resource "google_container_cluster" "risk-research" {
 
   # Support for mTLS
   mesh_certificates {
-    enable_certificates = false
+    enable_certificates = var.enable_mesh_certificates
   }
 
   dns_config {
@@ -254,7 +256,7 @@ resource "google_container_cluster" "risk-research" {
     }
   }
   release_channel {
-    channel = "RAPID"
+    channel = var.release_channel
   }
 
   secret_manager_config {
@@ -274,6 +276,7 @@ resource "google_container_cluster" "risk-research" {
 
 
 resource "google_container_node_pool" "primary_ondemand_nodes" {
+  count          = var.create_ondemand_nodepool ? 1 : 0
   name           = "ondemand-node-1"
   provider       = google-beta
   project        = var.project_id
@@ -283,8 +286,8 @@ resource "google_container_node_pool" "primary_ondemand_nodes" {
 
   autoscaling {
     location_policy      = "ANY"
-    total_min_node_count = 0
-    total_max_node_count = 32
+    total_min_node_count = var.min_nodes_ondemand
+    total_max_node_count = var.max_nodes_ondemand
   }
 
   management {
@@ -302,17 +305,12 @@ resource "google_container_node_pool" "primary_ondemand_nodes" {
   node_config {
     logging_variant = "MAX_THROUGHPUT"
     shielded_instance_config {
-      enable_integrity_monitoring = true
-      enable_secure_boot          = true
+      enable_integrity_monitoring = var.enable_shielded_nodes
+      enable_secure_boot          = var.enable_secure_boot
     }
 
     preemptible  = false
-    machine_type = "n2-standard-16"
-
-    # Can be used for GCS Node Cache
-    # local_nvme_ssd_block_config {
-    #   local_ssd_count = 2
-    # }
+    machine_type = var.node_machine_type_ondemand
 
     labels = {
       "resource-model" : "n2"
@@ -338,14 +336,13 @@ resource "google_container_node_pool" "primary_ondemand_nodes" {
 }
 
 resource "google_container_node_pool" "primary_spot_nodes" {
-  name           = "spot-nodes-1"
-  provider       = google-beta
-  project        = var.project_id
-  location       = var.region
-  cluster        = google_container_cluster.risk-research.name
-  node_locations = [random_shuffle.zone.result[0], random_shuffle.zone.result[1], random_shuffle.zone.result[2]]
-<<<<<<< HEAD
-  # max_pods_per_node = 64
+  count              = var.create_spot_nodepool ? 1 : 0
+  name               = "spot-nodes-1"
+  provider           = google-beta
+  project            = var.project_id
+  location           = var.region
+  cluster            = google_container_cluster.risk-research.name
+  node_locations     = [random_shuffle.zone.result[0], random_shuffle.zone.result[1], random_shuffle.zone.result[2]]
   initial_node_count = 5
 ||||||| parent of e660876 (Updates to support multi region deployments)
   node_locations = local.zones
@@ -354,8 +351,8 @@ resource "google_container_node_pool" "primary_spot_nodes" {
 
   autoscaling {
     location_policy      = "ANY"
-    total_min_node_count = 1
-    total_max_node_count = 3000
+    total_min_node_count = var.min_nodes_spot
+    total_max_node_count = var.max_nodes_spot
   }
 
   management {
@@ -372,16 +369,12 @@ resource "google_container_node_pool" "primary_spot_nodes" {
   node_config {
     logging_variant = "MAX_THROUGHPUT"
     shielded_instance_config {
-      enable_integrity_monitoring = true
-      enable_secure_boot          = true
+      enable_integrity_monitoring = var.enable_shielded_nodes
+      enable_secure_boot          = var.enable_secure_boot
     }
 
     preemptible  = true
-    machine_type = "n2-standard-64"
-
-    # Boot Disk Config
-    # disk_type = "pd-ssd"
-    # disk_size_gb = "200"
+    machine_type = var.node_machine_type_spot
 
     labels = {
       "resource-model" : "n2"

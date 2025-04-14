@@ -13,11 +13,11 @@
 # limitations under the License.
 
 output "cluster_name" {
-  description = "Cluster Name"
+  description = "Name of the deployed GKE Autopilot cluster for use in kubectl commands and referencing in other resources"
   value       = google_container_cluster.default.name
 }
 
 output "endpoint" {
-  description = "Cluster Endpoint"
+  description = "Control plane endpoint configuration for the GKE Autopilot cluster including DNS endpoints and external access configuration"
   value       = google_container_cluster.default.control_plane_endpoints_config[0]
 }

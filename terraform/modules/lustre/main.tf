@@ -34,15 +34,16 @@ resource "random_shuffle" "zone" {
   result_count = 1
 }
 
-# Create Parallelstore instance
-resource "google_parallelstore_instance" "parallelstore" {
-  project         = var.project_id
-  provider        = google-beta
-  instance_id     = var.instance_id != null ? var.instance_id : "parallelstore-${var.location}"
-  location        = local.location
-  capacity_gib    = var.capacity_gib != null ? var.capacity_gib : (var.deployment_type == "PERSISTENT" ? 27000 : 12000)
-  network         = var.network
-  deployment_type = var.deployment_type
+# Create Lustre instance
+resource "google_lustre_instance" "lustre" {
+  provider            = google-beta
+  project             = var.project_id
+  instance_id         = var.instance_id != null ? var.instance_id : "lustre-${var.location}"
+  location            = var.location
+  filesystem          = var.filesystem
+  capacity_gib        = var.capacity_gib
+  network             = var.network
+  gke_support_enabled = var.gke_support_enabled
 
   timeouts {
     create = "120m"

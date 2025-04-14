@@ -19,7 +19,7 @@ terraform {
       version = "~> 6.24.0"
     }
   }
-  # provider_meta "google" {
-  #   module_name = "cloud-solutions/risk-and-research-blueprints-v1"
-  # }
+  provider_meta "google" {
+    module_name = "cloud-solutions/fsi-rdp-infrastructure-v1.0.0"
+  }
 }

@@ -26,7 +26,7 @@ spec:
   volumeMode: Filesystem
   csi:
     driver: lustre.csi.storage.gke.io
-    volumeHandle: PROJECT_ID/LOCATION/INSTANCE_NAME # Modify this to use the project, zone, and mananged lustre instance name.
+    volumeHandle: PROJECT_ID/LOCATION/INSTANCE_NAME # Modify this to use the project, zone, and managed lustre instance name.
     volumeAttributes:
       ip: default # The IP address of the existing Lustre instance.
       filesystem: default # The filesystem name of the existing Lustre instance.

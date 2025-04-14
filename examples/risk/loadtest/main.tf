@@ -116,25 +116,49 @@ module "default_region" {
 }
 
 module "infrastructure" {
-  source                   = "../../infrastructure"
-  project_id               = var.project_id
-  regions                  = var.regions
-  clusters_per_region      = var.clusters_per_region
-  parallelstore_enabled    = var.parallelstore_enabled
-  deployment_type          = var.deployment_type
-  scaled_control_plane     = var.scaled_control_plane
-  cluster_max_cpus         = var.cluster_max_cpus
-  cluster_max_memory       = var.cluster_max_memory
-  additional_quota_enabled = var.additional_quota_enabled
-  parallelstore_zone       = var.parallelstore_zone
-  enable_csi_filestore     = var.enable_csi_filestore
-  enable_csi_gcs_fuse      = var.enable_csi_gcs_fuse
+  source = "../../infrastructure/infrastructure"
+
+  # Project and Regional Configuration
+  project_id = var.project_id
+  regions    = var.regions
+
+  # Network Configuration
+  vpc_name         = var.vpc_name
+  storage_ip_range = var.storage_ip_range
+
+  # GKE Cluster Configuration
+  gke_standard_cluster_name  = var.gke_standard_cluster_name
+  clusters_per_region        = var.clusters_per_region
+  node_machine_type_ondemand = var.node_machine_type_ondemand
+  node_machine_type_spot     = var.node_machine_type_spot
+  min_nodes_ondemand         = var.min_nodes_ondemand
+  max_nodes_ondemand         = var.max_nodes_ondemand
+  min_nodes_spot             = var.min_nodes_spot
+  max_nodes_spot             = var.max_nodes_spot
+
+  # Storage Configuration
+  storage_type                  = var.storage_type != null ? var.storage_type : (var.parallelstore_enabled ? "PARALLELSTORE" : null)
+  storage_capacity_gib          = var.storage_capacity_gib
+  storage_locations             = var.storage_locations
+  parallelstore_deployment_type = var.deployment_type
+  lustre_filesystem             = var.lustre_filesystem
+  lustre_gke_support_enabled    = var.lustre_gke_support_enabled
+
+  # Artifact Registry
+  artifact_registry_name = var.artifact_registry_name
+
+  # Security Configuration
+  cluster_service_account  = var.cluster_service_account
+  enable_workload_identity = var.enable_workload_identity
+
+  # CSI Drivers
   enable_csi_parallelstore = var.enable_csi_parallelstore
+  enable_csi_gcs_fuse      = var.enable_csi_gcs_fuse
 }
 
-#
-# Build the containers (Docker file Cloudbuild)
-#
+#-----------------------------------------------------
+# Container Image Building
+#-----------------------------------------------------
 
 module "agent" {
   source = "../../../terraform/modules/builder"
@@ -167,9 +191,9 @@ module "agent" {
 }
 
 
-# #
-# # Cloud Run
-# #
+#-----------------------------------------------------
+# Cloud Run Deployment
+#-----------------------------------------------------
 
 module "cloudrun" {
   source = "../agent/modules/run"
@@ -195,9 +219,9 @@ module "cloudrun" {
 }
 
 
-# #
-# # GKE
-# #
+#-----------------------------------------------------
+# GKE Deployment
+#-----------------------------------------------------
 
 module "gke" {
   source     = "../agent/modules/gke"
@@ -223,14 +247,14 @@ module "gke" {
   test_configs           = local.test_configs_dict
 
   # Parallelstore Config
-  parallelstore_enabled = var.parallelstore_enabled
+  parallelstore_enabled   = var.storage_type == "PARALLELSTORE"
   parallelstore_instances = module.infrastructure.parallelstore_instances
   vpc_name = module.infrastructure.vpc.name
 }
 
-#
-# Log analytics (specific workload and agent, GKE and Run)
-#
+#-----------------------------------------------------
+# Logging and Analytics Configuration
+#-----------------------------------------------------
 
 # Always have the same filter. Leave this at the top level. This will
 # capture application *and* agent stuff.
@@ -348,9 +372,9 @@ resource "google_bigquery_table" "agent_summary_by_instance" {
 }
 
 
-#
-# Capture Pub/Sub topics into BigQuery
-#
+#-----------------------------------------------------
+# PubSub and BigQuery Integration
+#-----------------------------------------------------
 # All message are assumed to be JSON and captured in a JSON data element
 module "bigquery_capture" {
   source                     = "../../../terraform/modules/pubsub-subscriptions"
@@ -383,21 +407,41 @@ resource "google_service_account" "bq_write_service_account" {
   display_name = "BQ Write Service Account"
 }
 
-#
+#-----------------------------------------------------
 # Quota Requests
-#
+#-----------------------------------------------------
 
-# module "quota" {
-#   count               = var.additional_quota_enabled ? 1 : 0
-#   source              = "../../../terraform/modules/quota"
-#   region              = var.region
-#   quota_contact_email = var.quota_contact_email
-#   project_id          = var.project_id
-# }
+module "quota" {
+  count  = var.additional_quota_enabled ? 1 : 0
+  source = "../../../terraform/modules/quota"
 
-#
-# Create views for Data Studio
-#
+  project_id          = var.project_id
+  quota_contact_email = var.quota_contact_email
+
+  quota_preferences = [
+    {
+      service         = "compute.googleapis.com"
+      quota_id        = "PREEMPTIBLE-CPUS-per-project-region"
+      preferred_value = 10000
+      region          = module.default_region.default_region
+    },
+    {
+      service         = "compute.googleapis.com"
+      quota_id        = "DISKS-TOTAL-GB-per-project-region"
+      preferred_value = 65000
+      region          = module.default_region.default_region
+    },
+    {
+      service         = "monitoring.googleapis.com"
+      quota_id        = "IngestionRequestsPerMinutePerProject"
+      preferred_value = 100000
+    }
+  ]
+}
+
+#-----------------------------------------------------
+# BigQuery Views for Visualization
+#-----------------------------------------------------
 
 # Pub/Sub messages joined by request/response
 resource "google_bigquery_table" "messages_joined" {
@@ -444,9 +488,9 @@ resource "google_bigquery_table" "messages_summary" {
 }
 
 
-#
-# UI Configuration and scripts
-#
+#-----------------------------------------------------
+# UI Configuration and Test Scripts
+#-----------------------------------------------------
 
 resource "local_file" "test_scripts" {
   for_each = (var.scripts_output == "") ? {} : {

@@ -29,12 +29,12 @@ resource "google_artifact_registry_repository" "research-images" {
   repository_id = var.name
   description   = "Multi-region artifact registry in ${module.region_analysis.dominant_region}"
   format        = "DOCKER"
-  # Keep only 10 latest images in docker repo
+  # Keep only the most recent image versions based on cleanup_keep_count
   cleanup_policies {
     id     = "keep-minimum-versions"
     action = "KEEP"
     most_recent_versions {
-      keep_count = 10
+      keep_count = var.cleanup_keep_count
     }
   }
   lifecycle {

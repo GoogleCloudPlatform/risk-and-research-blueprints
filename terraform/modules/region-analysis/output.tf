@@ -14,26 +14,26 @@
 
 
 output "region_mapping" {
-  description = "Map of regions to their multi-region parent"
+  description = "Mapping of individual GCP regions to their corresponding multi-region parent (e.g., us-central1 → us), used for determining resource placement strategy"
   value       = local.region_mapping
 }
 
 output "region_counts" {
-  description = "Count of regions in each multi-region"
+  description = "Count of specific regions within each multi-region group, used to determine the dominant multi-region and for resource distribution planning"
   value       = local.region_counts
 }
 
 output "dominant_region" {
-  description = "The multi-region with the most regions (preferring US in ties)"
+  description = "The multi-region with the most regions in the input set (preferring US in case of ties), used for optimal placement of multi-region resources"
   value       = local.dominant_region
 }
 
 output "default_region" {
-  description = "First alphabetical region from the dominant multi-region"
+  description = "The first alphabetically sorted individual region from within the dominant multi-region, used as a default region for resources requiring a specific region"
   value       = local.default_region
 }
 
 output "regions_in_dominant" {
-  description = "All regions in the dominant multi-region"
+  description = "List of all individual regions that belong to the identified dominant multi-region, useful for distributing resources across zones within the preferred multi-region"
   value       = local.regions_in_dominant
 }

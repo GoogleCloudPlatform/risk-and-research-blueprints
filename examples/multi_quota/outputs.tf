@@ -12,18 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-terraform {
-  required_providers {
-    google = {
-      source  = "hashicorp/google"
-      version = ">= 6.24.0"
-    }
-    google-beta = {
-      source  = "hashicorp/google-beta"
-      version = ">= 6.24.0"
-    }
-  }
-  provider_meta "google" {
-    module_name = "cloud-solutions/fsi-rdp-infrastructure-v1.0.0"
-  }
+output "quota_preferences" {
+  description = "Map of created quota preferences"
+  value       = module.multi_region_quotas.quota_preferences
+}
+
+output "requested_quota_count" {
+  description = "Number of quota preferences requested"
+  value       = module.multi_region_quotas.requested_quota_count
 }

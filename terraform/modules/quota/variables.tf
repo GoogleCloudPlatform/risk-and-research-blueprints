@@ -18,7 +18,7 @@ variable "project_id" {
 
   validation {
     condition     = var.project_id != "YOUR_PROJECT_ID"
-    error_message = "'project_id' was not set, please set the value in the fsi-resaerch-1.tfvars file"
+    error_message = "'project_id' was not set, please set the value in your terraform.tfvars file"
   }
 }
 
@@ -29,24 +29,31 @@ variable "region" {
 }
 
 variable "quota_contact_email" {
-  description = "Your contact email for the quota request"
+  description = "Contact email for quota requests"
   type        = string
+  default     = ""
 }
 
-variable "spot_cpus" {
-  type        = number
-  default     = 10000
-  description = "Max CPU in cluster autoscaling resource limits"
-}
+variable "quota_preferences" {
+  description = "Map of quota preferences to request. Each item should include service, quota_id, preferred_value, and optional dimensions"
+  type = list(object({
+    service         = string
+    quota_id        = string
+    preferred_value = number
+    dimensions      = optional(map(string), {})
+    region          = optional(string, null)
+    # Use custom_name if you want to override the default name format
+    custom_name = optional(string, null)
+  }))
+  default = []
 
-variable "PD" {
-  type        = number
-  default     = 65000
-  description = "Max CPU in cluster autoscaling resource limits"
-}
+  validation {
+    condition     = length([for q in var.quota_preferences : q if q.service == ""]) == 0
+    error_message = "The 'service' field must be provided for each quota preference."
+  }
 
-variable "ingestion_requests" {
-  type        = number
-  default     = 100000
-  description = "Max CPU in cluster autoscaling resource limits"
+  validation {
+    condition     = length([for q in var.quota_preferences : q if q.quota_id == ""]) == 0
+    error_message = "The 'quota_id' field must be provided for each quota preference."
+  }
 }

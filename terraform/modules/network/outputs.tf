@@ -13,32 +13,32 @@
 # limitations under the License.
 
 output "subnet_id" {
-  description = "ID of the created subnet"
+  description = "Fully qualified identifier of the created GKE subnet in format projects/{project}/regions/{region}/subnetworks/{name}"
   value       = google_compute_subnetwork.subnet.id
 }
 
 output "subnet_name" {
-  description = "Name of the created subnet"
+  description = "Name of the created GKE subnet used for referencing in GKE cluster creation and other resources"
   value       = google_compute_subnetwork.subnet.name
 }
 
 output "pod_range_name" {
-  description = "Name of the pods secondary range"
+  description = "Name of the secondary IP range created for Kubernetes pods in the specified region, used during GKE cluster creation"
   value       = "pods-range-${var.region}"
 }
 
 output "service_range_name" {
-  description = "Name of the services secondary range"
+  description = "Name of the secondary IP range created for Kubernetes services in the specified region, used during GKE cluster creation"
   value       = "services-range-${var.region}"
 }
 
 output "nat_ip" {
-  description = "NAT IP addresses"
+  description = "List of static IP addresses assigned to the Cloud NAT gateway for egress traffic from the private GKE cluster"
   value       = google_compute_router_nat.nat.nat_ips
 }
 
 output "router_id" {
-  description = "Cloud Router ID"
+  description = "Fully qualified identifier of the Cloud Router resource in format projects/{project}/regions/{region}/routers/{name}"
   value       = google_compute_router.router.id
 }
 

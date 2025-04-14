@@ -23,36 +23,42 @@ variable "project_id" {
 }
 
 variable "location" {
-  description = "The location (zone) where the Parallelstore instance will be created, in the format 'region-zone' e.g., 'us-central1-a'"
+  description = "The location (zone) where the Lustre instance will be created, in the format 'region-zone' e.g., 'us-central1-a'"
   type        = string
   default     = "null"
 }
 
 variable "instance_id" {
-  description = "The ID of the Parallelstore instance. If null, will be set to 'parallelstore-{location}'."
+  description = "The ID of the Lustre instance. If null, will be set to 'lustre-{location}'."
   type        = string
   default     = null
 }
 
+variable "filesystem" {
+  description = "The name of the Lustre filesystem"
+  type        = string
+  default     = "lustre-fs"
+}
+
 variable "network" {
-  description = "The VPC network to which the Parallelstore instance should be connected"
+  description = "The VPC network to which the Lustre instance should be connected"
   type        = string
   default     = "default"
 }
 
-variable "deployment_type" {
-  description = "Parallelstore Instance deployment type (SCRATCH or PERSISTENT)"
-  type        = string
-  default     = "SCRATCH"
+variable "capacity_gib" {
+  description = "Capacity in GiB for Lustre instance. Must be a multiple of 9000."
+  type        = number
+  default     = 18000
 
   validation {
-    condition     = contains(["SCRATCH", "PERSISTENT"], var.deployment_type)
-    error_message = "The deployment_type must be either SCRATCH or PERSISTENT"
+    condition     = var.capacity_gib >= 18000 && var.capacity_gib <= 936000 && var.capacity_gib % 9000 == 0
+    error_message = "Capacity must be a multiple of 9000 GiB between 18000 GiB and 936000 GiB"
   }
 }
 
-variable "capacity_gib" {
-  description = "Custom capacity in GiB for Parallelstore instance. If null, defaults to 12000 for SCRATCH and 27000 for PERSISTENT."
-  type        = number
-  default     = null
+variable "gke_support_enabled" {
+  description = "Enable GKE support for Lustre instance"
+  type        = bool
+  default     = true
 }

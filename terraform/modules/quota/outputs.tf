@@ -12,18 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-terraform {
-  required_providers {
-    google = {
-      source  = "hashicorp/google"
-      version = ">= 6.24.0"
-    }
-    google-beta = {
-      source  = "hashicorp/google-beta"
-      version = ">= 6.24.0"
-    }
-  }
-  # provider_meta "google" {
-  #   module_name = "cloud-solutions/risk-and-research-blueprints-v1"
-  # }
+output "quota_preferences" {
+  description = "Map of created quota preferences"
+  value       = google_cloud_quotas_quota_preference.quota_preferences
+}
+
+output "requested_quota_count" {
+  description = "Number of quota preferences requested"
+  value       = length(google_cloud_quotas_quota_preference.quota_preferences)
 }

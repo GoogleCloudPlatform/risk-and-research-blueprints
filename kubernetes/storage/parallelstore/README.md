@@ -26,7 +26,7 @@ gcloud builds submit --project $PROJECT_ID --region=$REGION .
 #### Manually
 ```bash
 cd image
-docker buildx build --platform linux/amd64 -t $REGION-docker.pkg.dev/$PROJECT_ID/research-images/nodemount:latest --push -f ./nodemount/Dockerfile .
+docker buildx build --platform linux/amd64 -t $REGION-docker.pkg.dev/$PROJECT_ID/research-images/nodemount:latest --push -f ./Dockerfile .
 ```
 
 **3. Update Config**
@@ -79,9 +79,10 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
 - daemonset.yaml
+- daemonset-access-points.yaml
 images:
 - name: nodemount
-  newName: us-central1-docker.pkg.dev/fsi-research-5/research-images/nodemount  # Replace with your desired registry
+  newName: us-central1-docker.pkg.dev/your-project-id/research-images/nodemount  # Replace with your registry
   newTag: latest                    # Replace with your desired tag
 ```
 
@@ -93,7 +94,7 @@ kubectl apply -k k8s
 
 **5. Validate Deployment**
 ```bash
-kubectl describe daemonset/parallelstore-nodemount -n parallelstore-nodemount
+kubectl describe daemonset/daos-client -n default
 ```
 Check the "Desired Number Scheduled" and "Current Number Scheduled" to ensure they match the number of nodes in your cluster.
 Look for any error messages or events that indicate problems with the DaemonSet.

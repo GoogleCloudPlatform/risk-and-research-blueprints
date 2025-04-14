@@ -12,52 +12,39 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+locals {
+  # Process quota preferences to handle region-specific quotas
+  quota_preferences = [
+    for pref in var.quota_preferences : {
+      service         = pref.service
+      quota_id        = pref.quota_id
+      preferred_value = pref.preferred_value
+      # Merge region into dimensions if present and not already in dimensions
+      dimensions = pref.region != null ? merge(pref.dimensions, { region = pref.region }) : pref.dimensions
+      # Generate name if custom_name is not provided
+      name = pref.custom_name != null ? pref.custom_name : "${replace(pref.service, ".", "_")}-${pref.quota_id}${pref.region != null ? "_${pref.region}" : ""}"
+    }
+  ]
+}
+
 data "google_project" "environment" {
   project_id = var.project_id
 }
 
-resource "google_cloud_quotas_quota_preference" "spot_cpus" {
-  count         = var.quota_contact_email != "" ? 1 : 0
-  parent        = "projects/${var.project_id}"
-  name          = "compute_googleapis_com-PREEMPTIBLE-CPUS-per-project-region_${var.region}"
-  dimensions    = { region = "${var.region}" }
-  service       = "compute.googleapis.com"
-  quota_id      = "PREEMPTIBLE-CPUS-per-project-region"
-  contact_email = var.quota_contact_email
-  quota_config {
-    preferred_value = var.spot_cpus
-  }
-  lifecycle {
-    ignore_changes = all
-  }
-}
+resource "google_cloud_quotas_quota_preference" "quota_preferences" {
+  for_each = { for idx, pref in local.quota_preferences : idx => pref if var.quota_contact_email != "" }
 
-resource "google_cloud_quotas_quota_preference" "pd_disks" {
-  count         = var.quota_contact_email != "" ? 1 : 0
   parent        = "projects/${var.project_id}"
-  name          = "compute_googleapis_com-DISKS-TOTAL-GB-per-project-region_${var.region}"
-  dimensions    = { region = "${var.region}" }
-  service       = "compute.googleapis.com"
-  quota_id      = "DISKS-TOTAL-GB-per-project-region"
+  name          = each.value.name
+  dimensions    = each.value.dimensions
+  service       = each.value.service
+  quota_id      = each.value.quota_id
   contact_email = var.quota_contact_email
-  quota_config {
-    preferred_value = var.PD
-  }
-  lifecycle {
-    ignore_changes = all
-  }
-}
 
-resource "google_cloud_quotas_quota_preference" "monitoring_ingestion_requests" {
-  count         = var.quota_contact_email != "" ? 1 : 0
-  parent        = "projects/${var.project_id}"
-  name          = "monitoring_googleapis_com_IngestionRequestsPerMinutePerProject_${var.region}"
-  service       = "monitoring.googleapis.com"
-  quota_id      = "IngestionRequestsPerMinutePerProject"
-  contact_email = var.quota_contact_email
   quota_config {
-    preferred_value = var.ingestion_requests
+    preferred_value = each.value.preferred_value
   }
+
   lifecycle {
     ignore_changes = all
   }

@@ -16,7 +16,7 @@
 variable "project_id" {
   type        = string
   default     = "YOUR_PROJECT_ID"
-  description = "The GCP project ID where resources will be created."
+  description = "The GCP project ID where Monte Carlo simulation resources will be created."
 
   # Validation to ensure the project_id is set
   validation {
@@ -26,7 +26,7 @@ variable "project_id" {
 }
 
 variable "regions" {
-  description = "List of regions where GKE clusters should be created"
+  description = "List of GCP regions where GKE clusters for Monte Carlo workloads should be created"
   type        = list(string)
   default     = ["us-central1"]
 
@@ -37,7 +37,7 @@ variable "regions" {
 }
 
 variable "clusters_per_region" {
-  description = "Map of regions to number of clusters to create in each"
+  description = "Map of GCP regions to number of GKE clusters to create for Monte Carlo simulations"
   type        = map(number)
   default     = { "us-central1" = 1 }
 
@@ -45,33 +45,6 @@ variable "clusters_per_region" {
     condition     = alltrue([for count in values(var.clusters_per_region) : count <= 1])
     error_message = "This example supports a single cluster"
   }
-}
-# Enable/disable Parallelstore deployment (default: false)
-variable "parallelstore_enabled" {
-  type        = bool
-  description = "Enable or disable the deployment of Parallelstore."
-  default     = false
-}
-# Deployment type for Parallelstore SCRATCH or PERSISTENT (default: SCRATCH)
-variable "deployment_type" {
-  description = "Parallelstore Instance deployment type"
-  type        = string
-  default     = "SCRATCH"
-}
-
-
-# Deployment type for Parallelstore SCRATCH or PERSISTENT (default: SCRATCH)
-variable "deployment_type" {
-  description = "Parallelstore Instance deployment type"
-  type        = string
-  default     = "SCRATCH"
-}
-
-# Enable/disable initial deployment of a large nodepool for control plane nodes (default: false)
-variable "scaled_control_plane" {
-  type        = bool
-  description = "Deploy a larger initial nodepool to ensure larger control plane nodes are provisied"
-  default     = false
 }
 
 variable "dashboard" {

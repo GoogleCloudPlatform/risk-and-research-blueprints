@@ -18,38 +18,11 @@ data "google_project" "environment" {
 }
 
 module "infrastructure" {
-  source                = "../../infrastructure"
-  project_id            = var.project_id
-  regions               = var.regions
-  clusters_per_region   = var.clusters_per_region
-  parallelstore_enabled = var.parallelstore_enabled
+  source              = "../../infrastructure/infrastructure"
+  project_id          = var.project_id
+  regions             = var.regions
+  clusters_per_region = var.clusters_per_region
 }
-
-
-
-# Example Specific
-# resource "google_storage_bucket" "gkebatch" {
-#   name                        = "gkebatch-${random_string.random.result}"
-#   project                     = data.google_project.environment.project_id
-#   location                    = "US"
-#   force_destroy               = true
-#   uniform_bucket_level_access = true
-# }
-# Copy python_write.py into the GCS Bucket
-# This is now done in the toolkit configuration
-# resource "google_storage_bucket_object" "python_write" {
-#   name         = "python_write.py"
-#   source       = "${path.module}/src/tutorial_files/gke_batch.py"
-#   content_type = "text/plain"
-#   bucket       = google_storage_bucket.gkebatch.id
-# }
-
-# resource "random_string" "random" {
-#   length  = 8
-#   lower   = true
-#   special = false
-#   upper   = false
-# }
 
 # Example IAM
 resource "google_project_iam_member" "storage_objectuser" {
@@ -57,7 +30,7 @@ resource "google_project_iam_member" "storage_objectuser" {
   project    = data.google_project.environment.project_id
   role       = "roles/storage.objectUser"
   member     = "principalSet://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${data.google_project.environment.project_id}.svc.id.goog/namespace/team-${each.value}"
-  depends_on = [module.gke_standard]
+  depends_on = [module.infrastructure]
 }
 
 resource "google_project_iam_member" "pubsub_publisher" {
@@ -65,7 +38,7 @@ resource "google_project_iam_member" "pubsub_publisher" {
   project    = data.google_project.environment.project_id
   role       = "roles/pubsub.publisher"
   member     = "principalSet://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${data.google_project.environment.project_id}.svc.id.goog/namespace/team-${each.value}"
-  depends_on = [module.gke_standard]
+  depends_on = [module.infrastructure]
 }
 
 resource "google_project_iam_member" "pubsub_viewer" {
@@ -73,7 +46,7 @@ resource "google_project_iam_member" "pubsub_viewer" {
   project    = data.google_project.environment.project_id
   role       = "roles/pubsub.viewer"
   member     = "principalSet://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${data.google_project.environment.project_id}.svc.id.goog/namespace/team-${each.value}"
-  depends_on = [module.gke_standard]
+  depends_on = [module.infrastructure]
 }
 
 # Monitoring Dashboard

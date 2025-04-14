@@ -20,7 +20,7 @@ Along with a sample Kubernetes Job manifest to run in your kubernetes cluster.
 ## Run via CLI
   1. Install Requirements
   ```bash
-    python3 install -r requirements.txt
+    pip install -r requirements.txt
   ```
   Sample Import Job:
   ```
@@ -66,11 +66,11 @@ Along with a sample Kubernetes Job manifest to run in your kubernetes cluster.
 
   ```bash
     gcloud projects add-iam-policy-binding $PROJECT_ID \
-      --member="principal://iam.googleapis.com/projects/583551770728/locations/global/workloadIdentityPools/$PROJECT_ID.svc.id.goog/subject/ns/default/sa/parallelstore-data-transfer" \
+      --member="principal://iam.googleapis.com/projects/$PROJECT_ID/locations/global/workloadIdentityPools/$PROJECT_ID.svc.id.goog/subject/ns/default/sa/parallelstore-data-transfer" \
       --role="roles/storage.admin"
 
     gcloud projects add-iam-policy-binding $PROJECT_ID \
-      --member="principal://iam.googleapis.com/projects/583551770728/locations/global/workloadIdentityPools/$PROJECT_ID.svc.id.goog/subject/ns/default/sa/parallelstore-data-transfer" \
+      --member="principal://iam.googleapis.com/projects/$PROJECT_ID/locations/global/workloadIdentityPools/$PROJECT_ID.svc.id.goog/subject/ns/default/sa/parallelstore-data-transfer" \
       --role="roles/parallelstore.admin"
 
   ```

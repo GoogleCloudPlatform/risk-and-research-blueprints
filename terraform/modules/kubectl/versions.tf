@@ -16,20 +16,11 @@ terraform {
   required_providers {
     google = {
       source  = "hashicorp/google"
-<<<<<<< HEAD
       version = "~> 6.24.0"
     }
     google-beta = {
       source  = "hashicorp/google-beta"
       version = "~> 6.24.0"
-||||||| parent of 040a30b (Updating TTL to never expire for pubsub subscriptions)
-=======
-      version = "~> 6.17.0"
-    }
-    google-beta = {
-      source  = "hashicorp/google-beta"
-      version = "~> 6.17.0"
->>>>>>> 040a30b (Updating TTL to never expire for pubsub subscriptions)
     }
   }
   provider_meta "google" {

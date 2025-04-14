@@ -122,3 +122,145 @@ variable "enable_csi_gcs_fuse" {
   type        = bool
   default     = true
 }
+
+variable "node_machine_type_ondemand" {
+  type        = string
+  description = "Machine type for on-demand node pools in GKE clusters"
+  default     = "n2-standard-16"
+}
+
+variable "node_machine_type_spot" {
+  type        = string
+  description = "Machine type for spot node pools in GKE clusters"
+  default     = "n2-standard-64"
+}
+
+variable "min_nodes_ondemand" {
+  type        = number
+  description = "Minimum number of on-demand nodes in the node pool"
+  default     = 0
+}
+
+variable "max_nodes_ondemand" {
+  type        = number
+  description = "Maximum number of on-demand nodes in the node pool"
+  default     = 32
+}
+
+variable "min_nodes_spot" {
+  type        = number
+  description = "Minimum number of spot nodes in the node pool"
+  default     = 1
+}
+
+variable "max_nodes_spot" {
+  type        = number
+  description = "Maximum number of spot nodes in the node pool"
+  default     = 3000
+}
+
+variable "release_channel" {
+  type        = string
+  description = "GKE release channel for clusters (RAPID, REGULAR, STABLE)"
+  default     = "RAPID"
+
+  validation {
+    condition     = contains(["RAPID", "REGULAR", "STABLE"], var.release_channel)
+    error_message = "release_channel must be one of: RAPID, REGULAR, STABLE"
+  }
+}
+
+variable "enable_shielded_nodes" {
+  description = "Enable Shielded GKE Nodes for enhanced security"
+  type        = bool
+  default     = true
+}
+
+variable "enable_secure_boot" {
+  description = "Enable Secure Boot for GKE nodes"
+  type        = bool
+  default     = true
+}
+
+variable "enable_workload_identity" {
+  description = "Enable Workload Identity for GKE clusters"
+  type        = bool
+  default     = true
+}
+
+variable "enable_private_endpoint" {
+  description = "Enable private endpoint for GKE control plane (restricts access to private networks)"
+  type        = bool
+  default     = false
+}
+
+variable "create_ondemand_nodepool" {
+  description = "Whether to create the on-demand node pool"
+  type        = bool
+  default     = true
+}
+
+variable "create_spot_nodepool" {
+  description = "Whether to create the spot node pool"
+  type        = bool
+  default     = true
+}
+
+variable "datapath_provider" {
+  description = "The datapath provider for the GKE cluster (DATAPATH_PROVIDER_UNSPECIFIED, LEGACY_DATAPATH, or ADVANCED_DATAPATH)"
+  type        = string
+  default     = "LEGACY_DATAPATH"
+
+  validation {
+    condition     = contains(["DATAPATH_PROVIDER_UNSPECIFIED", "LEGACY_DATAPATH", "ADVANCED_DATAPATH"], var.datapath_provider)
+    error_message = "datapath_provider must be one of: DATAPATH_PROVIDER_UNSPECIFIED, LEGACY_DATAPATH, ADVANCED_DATAPATH"
+  }
+}
+
+variable "enable_advanced_datapath_observability_metrics" {
+  description = "Enable advanced datapath observability metrics when datapath_provider is ADVANCED_DATAPATH"
+  type        = bool
+  default     = true
+}
+
+variable "enable_advanced_datapath_observability_relay" {
+  description = "Enable advanced datapath observability relay when datapath_provider is ADVANCED_DATAPATH"
+  type        = bool
+  default     = false
+}
+
+variable "enable_intranode_visibility" {
+  description = "Enable intranode visibility for the GKE cluster"
+  type        = bool
+  default     = false
+}
+
+variable "enable_cilium_clusterwide_network_policy" {
+  description = "Enable Cilium clusterwide network policy for the GKE cluster"
+  type        = bool
+  default     = false
+}
+
+variable "maintenance_start_time" {
+  description = "The start time for the maintenance window in RFC3339 format (e.g., '2024-09-17T04:00:00Z')"
+  type        = string
+  default     = "2024-09-17T04:00:00Z"
+}
+
+variable "maintenance_end_time" {
+  description = "The end time for the maintenance window in RFC3339 format (e.g., '2024-09-18T04:00:00Z')"
+  type        = string
+  default     = "2024-09-18T04:00:00Z"
+}
+
+variable "maintenance_recurrence" {
+  description = "The recurrence of the maintenance window in RRULE format (e.g., 'FREQ=WEEKLY;BYDAY=SA,SU')"
+  type        = string
+  default     = "FREQ=WEEKLY;BYDAY=SA,SU"
+}
+
+variable "enable_mesh_certificates" {
+  description = "Enable mesh certificates for the GKE cluster"
+  type        = bool
+  default     = false
+}

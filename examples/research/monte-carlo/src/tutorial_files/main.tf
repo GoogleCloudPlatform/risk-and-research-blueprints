@@ -22,52 +22,39 @@ resource "random_id" "resource_name_suffix" {
 }
 
 # settings.toml
-data "template_file" "settings_toml" {
-  template = file("${path.module}/settings.tpl.toml")
-  vars = {
+resource "google_storage_bucket_object" "settings_obj_toml" {
+  name = "settings.toml"
+  content = templatefile("${path.module}/settings.tpl.toml", {
     project_id   = var.project_id
     topic_id     = var.topic_id
     topic_schema = var.topic_schema
     bucket_name  = local.bucket
     region       = var.region
-  }
-}
-resource "google_storage_bucket_object" "settings_obj_toml" {
-  name    = "settings.toml"
-  content = data.template_file.settings_toml.rendered
-  bucket  = local.bucket
+  })
+  bucket = local.bucket
 }
 
 # run_me_first.sh
-data "template_file" "run_me_first_sh" {
-  template = file("${path.module}/run_me_first.tpl.sh")
-  vars = {
+resource "google_storage_bucket_object" "run_me_first_sh_obj" {
+  name = "run_me_first.sh"
+  content = templatefile("${path.module}/run_me_first.tpl.sh", {
     cluster_name = var.cluster_name
     project_id   = var.project_id
     bucket_name  = local.bucket
     region       = var.region
-  }
-}
-
-resource "google_storage_bucket_object" "run_me_first_sh_obj" {
-  name    = "run_me_first.sh"
-  content = data.template_file.run_me_first_sh.rendered
-  bucket  = local.bucket
+  })
+  bucket = local.bucket
 }
 
 # FSI_MonteCarlo.ipynb
-data "template_file" "ipynb_fsi" {
-  template = file("${path.module}/FSI_MonteCarlo.ipynb")
-  vars = {
+resource "google_storage_bucket_object" "ipynb_obj_fsi" {
+  name = "FSI_MonteCarlo.ipynb"
+  content = templatefile("${path.module}/FSI_MonteCarlo.ipynb", {
     project_id = var.project_id
     dataset_id = var.dataset_id
     table_id   = var.table_id
-  }
-}
-resource "google_storage_bucket_object" "ipynb_obj_fsi" {
-  name    = "FSI_MonteCarlo.ipynb"
-  content = data.template_file.ipynb_fsi.rendered
-  bucket  = local.bucket
+  })
+  bucket = local.bucket
 }
 
 # gke_batch.py

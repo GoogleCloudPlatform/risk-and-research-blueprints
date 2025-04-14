@@ -46,19 +46,19 @@ account. Please validate with the
 
 ### Kubernetes Cluster, GKE
 
-> If you have an existing Kubernetes Cluster you can step.
+> If you have an existing Kubernetes Cluster you can skip this step.
 
 1. Clone this repository
-1. `cd` to `research-platform-for-fsi/examples/research/monte-carlo`
+1. `cd` to `risk-and-research-blueprints/examples/research/monte-carlo`
 1. Edit the `variables.tf` file to update `project_id` and if you choose, `region`.
 1. Run `terraform init`
 1. Run `terraform apply`
 
-This will create a GKE kubernetes cluster, `gke-risk-research` in your project.
+This will create a GKE kubernetes cluster, `gke-risk-research-us-central1-0` in your project.
 
 Once complete, authenticate to the cluster.
 ```
-gcloud container clusters get-credentials gke-risk-research --region us-central1
+gcloud container clusters get-credentials gke-risk-research-us-central1-0 --region us-central1
 ```
 
 Now the cluster build is complete and you are authenticated, install Kueue and Kueue Configurations:
@@ -89,27 +89,27 @@ You should install this in your $HOME directory. Then you can test it:
 ```
 
 ### Build docker container and send to Artifact Registry
-To efficiently run the code required for this tutorial, you must build a docker container
+To efficiently run the code required for this tutorial, you must build a docker container with
 Python installed with the relevant libraries and local Python scripts. You then send it to
-Google Cloud Aritifact Registry, in a repository called `research-images`. This work is
+Google Cloud Artifact Registry, in a repository called `research-images`. This work is
 managed by Google Cloud Build.
 
 Run Google Cloud Build as follows:
-1. `cd` to `research-platform-for-fsi/examples/research/monte-carlo/src/docker`
+1. `cd` to `risk-and-research-blueprints/examples/research/monte-carlo/src/docker`
 
 ```
 gcloud builds submit --region=us-central1 --config cloudbuild.yaml
 ```
-Ensure that `us-central1` is the region your cluster ended up in.
+Ensure that `us-central1` is the region your cluster is deployed in.
 
 ### Install the tutorial code
 
-This tutorial is part of the `research-platform-for-fsi` repository.
+This tutorial is part of the `risk-and-research-blueprints` repository.
 
-1. `cd` to `research-platform-for-fsi/examples/research/monte-carlo/src`
+1. `cd` to `risk-and-research-blueprints/examples/research/monte-carlo/src`
 1. Run `gcluster`
 ```
-~/cluster-toolkit/gcluster deploy fsi-montecarlo-on-gke.yaml \
+~/cluster-toolkit/gcluster deploy fsi-montecarlo-on-batch.yaml \
    --vars "project_id=${GOOGLE_CLOUD_PROJECT}"
 ```
 

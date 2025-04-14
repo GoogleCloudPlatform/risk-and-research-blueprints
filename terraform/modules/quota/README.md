@@ -10,7 +10,7 @@ module "quota" {
 
   project_id          = "your-project-id"
   quota_contact_email = "your-email@example.com"
-  
+
   quota_preferences = [
     {
       service         = "compute.googleapis.com"

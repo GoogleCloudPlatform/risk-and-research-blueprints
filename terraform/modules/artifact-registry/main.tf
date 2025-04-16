@@ -43,13 +43,4 @@ resource "google_artifact_registry_repository" "research-images" {
       error_message = "Could not determine appropriate multi-region location from provided regions: ${jsonencode(var.regions)}"
     }
   }
-  lifecycle {
-    precondition {
-      condition     = module.region_analysis.region_counts[module.region_analysis.dominant_region] > 0
-      error_message = "Could not determine appropriate multi-region location from provided regions: ${jsonencode(var.regions)}"
-    }
-  }
-  # docker_config {
-  #     immutable_tags = true
-  # }
 }

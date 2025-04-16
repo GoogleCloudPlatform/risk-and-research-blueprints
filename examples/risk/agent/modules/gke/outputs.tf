@@ -43,14 +43,6 @@ output "first_test_script" {
   value       = module.config_apply[0].test_scripts
 }
 
-output "get_credentials" {
-  description = "Commands for getting credentials for each GKE cluster"
-  value = {
-    for idx, cluster in var.gke_clusters :
-    cluster.cluster_name => "gcloud container clusters get-credentials ${cluster.cluster_name} --project ${var.project_id} --location ${cluster.region}"
-  }
-}
-
 # Cluster
 output "cluster_urls" {
   description = "Cluster urls"
@@ -65,14 +57,5 @@ output "get_credentials" {
   value = {
     for idx, cluster in var.gke_clusters :
     cluster.cluster_name => "gcloud container clusters get-credentials ${cluster.cluster_name} --project ${var.project_id} --location ${cluster.region}"
-  }
-}
-
-# Cluster
-output "cluster_urls" {
-  description = "Cluster urls"
-    value = {
-    for idx, cluster in var.gke_clusters :
-    cluster.cluster_name => "https://console.cloud.google.com/kubernetes/workload/overview?project=${var.project_id}&pageState=(%22savedViews%22:(%22n%22:%5B%22default%22%5D,%22c%22:%5B%22gke%2F${cluster.region}%2F${cluster.cluster_name}%22%5D))"
   }
 }

@@ -71,7 +71,7 @@ object({
 
 ## Examples
 
-An example implementation can be found in the [examples/multi_quota](examples/multi_quota/) directory, demonstrating how to request quotas for multiple regions and services in a single module call.
+An example implementation can be found in the [examples/infrastructure/multi-quota](../../examples/infrastructure/multi-quota) directory, demonstrating how to request quotas for multiple regions and services in a single module call.
 
 ## Notes
 

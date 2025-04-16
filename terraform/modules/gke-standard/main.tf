@@ -32,6 +32,12 @@ resource "random_shuffle" "zone" {
   result_count = 3
 }
 
+data "google_container_engine_versions" "central1b" {
+  provider       = google-beta
+  location       = var.region
+  version_prefix = var.min_master_version
+}
+
 resource "google_container_cluster" "risk-research" {
   deletion_protection = false
   provider            = google-beta
@@ -41,6 +47,7 @@ resource "google_container_cluster" "risk-research" {
   datapath_provider   = var.datapath_provider
   node_locations      = [random_shuffle.zone.result[0], random_shuffle.zone.result[1], random_shuffle.zone.result[2]]
   depends_on          = [google_kms_crypto_key_iam_member.gke_crypto_key]
+  min_master_version  = data.google_container_engine_versions.central1b.latest_master_version
 
   # We do this to ensure we have large control plane nodes created initially
   initial_node_count       = var.scaled_control_plane ? 700 : 1
@@ -263,6 +270,10 @@ resource "google_container_cluster" "risk-research" {
     enabled = true
   }
 
+  pod_autoscaling {
+    hpa_profile = "PERFORMANCE"
+  }
+
   lifecycle {
 
     # Once deleted the node_config will change. We can ignore this.
@@ -271,7 +282,6 @@ resource "google_container_cluster" "risk-research" {
       maintenance_policy
     ]
   }
-
 }
 
 
@@ -344,10 +354,7 @@ resource "google_container_node_pool" "primary_spot_nodes" {
   cluster            = google_container_cluster.risk-research.name
   node_locations     = [random_shuffle.zone.result[0], random_shuffle.zone.result[1], random_shuffle.zone.result[2]]
   initial_node_count = 5
-||||||| parent of e660876 (Updates to support multi region deployments)
-  node_locations = local.zones
-=======
->>>>>>> e660876 (Updates to support multi region deployments)
+
 
   autoscaling {
     location_policy      = "ANY"

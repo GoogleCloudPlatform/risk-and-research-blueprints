@@ -22,7 +22,7 @@ module "builder" {
       config_yaml = file("${path.module}/config/app2-config.yaml")
     }
   }
-  
+
   service_account_name = "cloudbuild-sa"
 }
 ```

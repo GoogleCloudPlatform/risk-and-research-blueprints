@@ -215,12 +215,6 @@ variable "storage_type" {
   }
 }
 
-variable "parallelstore_enabled" {
-  description = "Enable or disable the deployment of Parallelstore (deprecated, use storage_type instead)"
-  type        = bool
-  default     = false
-}
-
 variable "storage_capacity_gib" {
   description = "Capacity in GiB for the selected storage system (Parallelstore or Lustre)"
   type        = number
@@ -247,12 +241,6 @@ variable "deployment_type" {
     condition     = contains(["SCRATCH", "PERSISTENT"], var.deployment_type)
     error_message = "deployment_type must be either SCRATCH or PERSISTENT."
   }
-}
-
-variable "parallelstore_zone" {
-  description = "The zone to host the parallelstore instance in e.g. a, b or c (deprecated, use storage_locations instead)"
-  type        = string
-  default     = null
 }
 
 #-----------------------------------------------------

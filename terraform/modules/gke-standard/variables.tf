@@ -170,6 +170,12 @@ variable "release_channel" {
   }
 }
 
+variable "min_master_version" {
+  description = "The minimum version of the master. GKE will auto-update the master to new versions, so this does not guarantee the current master version."
+  type        = string
+  default     = "1.32.3"
+}
+
 variable "enable_shielded_nodes" {
   description = "Enable Shielded GKE Nodes for enhanced security"
   type        = bool

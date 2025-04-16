@@ -20,12 +20,12 @@ module "gke_standard" {
     email = google_service_account.gke_sa.email
     id    = google_service_account.gke_sa.id
   }
-  
+
   # Optional advanced configuration
   datapath_provider = "ADVANCED_DATAPATH"
   enable_advanced_datapath_observability_metrics = true
   enable_intranode_visibility = false
-  
+
   # Node pool configuration
   node_machine_type_ondemand = "n2-standard-16"
   node_machine_type_spot     = "n2-standard-64"

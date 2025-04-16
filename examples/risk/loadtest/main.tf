@@ -54,21 +54,7 @@ locals {
       startswith(key, "run_") ? (
         var.cloudrun_enabled && length(module.cloudrun) > 0 ?
         try(module.cloudrun[0].test_scripts[trimprefix(key, "run_")], null) : null
-<<<<<<< HEAD
         ) : (
-||||||| parent of e660876 (Updates to support multi region deployments)
-  local_test_scripts = merge(
-    length(module.cloudrun) == 0 ? {} : {
-      for key, script in module.cloudrun[0].test_scripts :
-      "run_${key}.sh" => script
-    },
-    length(module.gke) == 0 ? {} : {
-      for key, script in module.gke[0].test_scripts :
-      "gke_${key}.sh" => script
-  })
-=======
-      ) : (
->>>>>>> e660876 (Updates to support multi region deployments)
         length(module.gke) > 0 ?
         try(module.gke[module.default_region.default_region].test_scripts[trimprefix(key, "gke_")], null) : null
       )
@@ -105,13 +91,12 @@ locals {
   })
 }
 
+data "google_project" "environment" {
+  project_id = var.project_id
+}
+
 module "default_region" {
-<<<<<<< HEAD
   source  = "../../../terraform/modules/region-analysis"
-||||||| parent of e660876 (Updates to support multi region deployments)
-=======
-  source = "../../../terraform/modules/region-analysis"
->>>>>>> e660876 (Updates to support multi region deployments)
   regions = var.regions
 }
 
@@ -137,7 +122,7 @@ module "infrastructure" {
   max_nodes_spot             = var.max_nodes_spot
 
   # Storage Configuration
-  storage_type                  = var.storage_type != null ? var.storage_type : (var.parallelstore_enabled ? "PARALLELSTORE" : null)
+  storage_type                  = var.storage_type
   storage_capacity_gib          = var.storage_capacity_gib
   storage_locations             = var.storage_locations
   parallelstore_deployment_type = var.deployment_type
@@ -163,15 +148,7 @@ module "infrastructure" {
 module "agent" {
   source = "../../../terraform/modules/builder"
 
-<<<<<<< HEAD
   project_id        = var.project_id
-||||||| parent of e660876 (Updates to support multi region deployments)
-  project_id    = var.project_id
-  region        = var.region
-  repository_id = module.infrastructure.artifact_registry.name
-=======
-  project_id = var.project_id
->>>>>>> e660876 (Updates to support multi region deployments)
   region            = module.default_region.default_region
   repository_region = module.infrastructure.artifact_registry.location
   repository_id     = module.infrastructure.artifact_registry.name
@@ -224,8 +201,7 @@ module "cloudrun" {
 #-----------------------------------------------------
 
 module "gke" {
-  source     = "../agent/modules/gke"
-  depends_on = [module.infrastructure]
+  source = "../agent/modules/gke"
 
   project_id  = var.project_id
   regions     = var.regions
@@ -249,7 +225,14 @@ module "gke" {
   # Parallelstore Config
   parallelstore_enabled   = var.storage_type == "PARALLELSTORE"
   parallelstore_instances = module.infrastructure.parallelstore_instances
-  vpc_name = module.infrastructure.vpc.name
+  vpc_name                = module.infrastructure.vpc.name
+
+  depends_on = [
+    module.infrastructure,
+    module.agent,
+    google_project_iam_member.gke_hpa,
+    google_project_iam_member.metrics_writer
+  ]
 }
 
 #-----------------------------------------------------
@@ -292,23 +275,11 @@ resource "google_logging_project_sink" "my-sink" {
 }
 
 resource "google_bigquery_dataset" "main" {
-<<<<<<< HEAD
   project                    = var.project_id
   dataset_id                 = "workload"
   location                   = module.default_region.default_region
   delete_contents_on_destroy = true
 
-||||||| parent of e660876 (Updates to support multi region deployments)
-  project    = var.project_id
-  dataset_id = "workload"
-  location   = var.region
-=======
-  project    = var.project_id
-  dataset_id = "workload"
-  location   = module.default_region.default_region
-  delete_contents_on_destroy = true
-  
->>>>>>> e660876 (Updates to support multi region deployments)
   depends_on = [
     module.infrastructure
   ]
@@ -405,6 +376,20 @@ resource "google_service_account" "bq_write_service_account" {
   project      = var.project_id
   account_id   = "pubsub-bigquery-writer"
   display_name = "BQ Write Service Account"
+}
+
+# Apply needed permission to GCP service account (workload identity)
+# for reading Pub/Sub metrics
+resource "google_project_iam_member" "gke_hpa" {
+  project = var.project_id
+  role    = "roles/monitoring.viewer"
+  member  = "principal://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${data.google_project.environment.project_id}.svc.id.goog/subject/ns/custom-metrics/sa/custom-metrics-stackdriver-adapter"
+}
+
+resource "google_project_iam_member" "metrics_writer" {
+  project = var.project_id
+  role    = "roles/monitoring.metricWriter"
+  member  = "principal://iam.googleapis.com/projects/${data.google_project.environment.number}/locations/global/workloadIdentityPools/${data.google_project.environment.project_id}.svc.id.goog/subject/ns/default/sa/default"
 }
 
 #-----------------------------------------------------

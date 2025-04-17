@@ -18,24 +18,41 @@ variable "project_id" {
 
   validation {
     condition     = var.project_id != "YOUR_PROJECT_ID"
-    error_message = "'project_id' was not set, please set the value in the fsi-resaerch-1.tfvars file"
+    error_message = "'project_id' was not set, please set the value in the terraform.tfvars file"
   }
 }
 
-variable "region" {
-  description = "The region to host the cluster in"
+variable "location" {
+  description = "The location (zone) where the Parallelstore instance will be created, in the format 'region-zone' e.g., 'us-central1-a'"
   type        = string
-  default     = "us-central1"
+  default     = "null"
+}
+
+variable "instance_id" {
+  description = "The ID of the Parallelstore instance. If null, will be set to 'parallelstore-{location}'."
+  type        = string
+  default     = null
 }
 
 variable "network" {
-  description = "The vpc the cluster should be deployed to"
+  description = "The VPC network to which the Parallelstore instance should be connected"
   type        = string
   default     = "default"
 }
 
-variable "subnet" {
-  description = "The subnet the cluster should be deployed to"
+variable "deployment_type" {
+  description = "Parallelstore Instance deployment type (SCRATCH or PERSISTENT)"
   type        = string
-  default     = "default"
+  default     = "SCRATCH"
+
+  validation {
+    condition     = contains(["SCRATCH", "PERSISTENT"], var.deployment_type)
+    error_message = "The deployment_type must be either SCRATCH or PERSISTENT"
+  }
+}
+
+variable "capacity_gib" {
+  description = "Custom capacity in GiB for Parallelstore instance. If null, defaults to 12000 for SCRATCH and 27000 for PERSISTENT."
+  type        = number
+  default     = null
 }

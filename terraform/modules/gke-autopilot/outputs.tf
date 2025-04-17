@@ -11,3 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+output "cluster_name" {
+  description = "Name of the deployed GKE Autopilot cluster for use in kubectl commands and referencing in other resources"
+  value       = google_container_cluster.default.name
+}
+
+output "endpoint" {
+  description = "Control plane endpoint configuration for the GKE Autopilot cluster including DNS endpoints and external access configuration"
+  value       = google_container_cluster.default.control_plane_endpoints_config[0]
+}

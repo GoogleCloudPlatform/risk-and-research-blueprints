@@ -23,30 +23,25 @@ variable "project_id" {
   description = "The GCP project ID where resources will be created."
 }
 
-# Region where the build and artifact repository is
-variable "region" {
-  type        = string
-  description = "The Region of the build"
-}
-
-# Zones for resource deployment (default: us-central1 [a-d])
-variable "zones" {
+variable "regions" {
+  description = "List of regions where GKE clusters should be created"
   type        = list(string)
-  description = "The GCP zones to deploy resources to."
-  default     = ["a", "b", "c"]
+  default     = ["us-central1"]
 }
 
-variable "cluster_name" {
-  type    = string
-  default = "gke-risk-research"
+variable "gke_clusters" {
+  description = "List of GKE cluster configurations containing cluster name and region"
+  type = list(object({
+    cluster_name = string
+    region       = string
+  }))
 }
 
-variable "artifact_registry" {
-  type = object({
-    project  = string
-    location = string
-    name     = string
-  })
+# Enable hierarchical namespace GCS buckets
+variable "hsn_bucket" {
+  description = "Enable hierarchical namespace GCS buckets"
+  type        = bool
+  default     = false
 }
 
 # Containers to build
@@ -76,7 +71,6 @@ variable "dashboard" {
   default = "dashboards/risk-platform-overview.json"
 }
 
-
 #
 # Optional functionality
 # (Review suggested)
@@ -98,31 +92,10 @@ variable "workload_init_args" {
   description = "Workload initialization arguments to run"
 }
 
-# Enable/disable Parallelstore deployment (default: false)
-variable "parallelstore_enabled" {
+variable "pubsub_exactly_once" {
   type        = bool
-  description = "Enable or disable the deployment of Parallelstore."
-  default     = false
-}
-
-# Enable/disable GKE Standard cluster deployment (default: true)
-variable "gke_standard_enabled" {
-  type        = bool
-  description = "Enable or disable the deployment of a GKE Standard cluster."
   default     = true
-}
-
-# Enable/disable GKE Autopilot cluster deployment (default: false)
-variable "gke_autopilot_enabled" {
-  type        = bool
-  description = "Enable or disable the deployment of a GKE Autopilot cluster."
-  default     = false
-}
-# Enable/disable initial deployment of a large nodepool for control plane nodes (default: false)
-variable "scaled_control_plane" {
-  type        = bool
-  description = "Deploy a larger initial nodepool to ensure larger control plane nodes are provisied"
-  default     = false
+  description = "Enable Pub/Sub exactly once subscriptions"
 }
 
 
@@ -146,4 +119,36 @@ variable "gke_hpa_request" {
 variable "gke_hpa_response" {
   type    = string
   default = "gke_hpa_response"
+}
+
+# Parallelstore
+# Enable/disable Parallelstore deployment (default: false)
+variable "parallelstore_enabled" {
+  type        = bool
+  description = "Enable or disable the deployment of Parallelstore."
+  default     = false
+}
+
+variable "parallelstore_instances" {
+  type = map(object({
+    name          = string
+    access_points = list(string)
+    location      = string
+    region        = string
+    id            = string
+    capacity_gib  = number
+  }))
+  default = null
+  validation {
+    condition = var.parallelstore_instances == null || alltrue([
+      for instance in values(var.parallelstore_instances) :
+      instance.access_points != null && instance.access_points != ""
+    ])
+    error_message = "All parallelstore instances must have non-null access_points"
+  }
+}
+
+variable "vpc_name" {
+  type        = string
+  description = "Name of the VPC used by Parallelstore"
 }

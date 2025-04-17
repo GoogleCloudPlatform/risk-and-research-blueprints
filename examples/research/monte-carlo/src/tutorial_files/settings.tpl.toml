@@ -9,7 +9,7 @@ service_account_name="default"
 namespace="team-b"
 
 # set container and command
-container = {image_uri="us-central1-docker.pkg.dev/${project_id}/research-images/mc_run"}
+container = {image_uri="us-docker.pkg.dev/${project_id}/research-images/mc_run"}
 command=[]
 args = ["--project_id=${project_id}",
         "--incoming_topic_id=${topic_id}",

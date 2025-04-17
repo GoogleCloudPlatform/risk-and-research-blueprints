@@ -13,11 +13,21 @@
 # limitations under the License.
 
 output "artifact_registry_url" {
-  description = "Address of the remote repository."
-  value       = "${var.region}-docker.pkg.dev/${data.google_project.environment.project_id}/${google_artifact_registry_repository.research-images.name}"
+  description = "Full URL of the Artifact Registry repository for use in Docker image references (format: {region}-docker.pkg.dev/{project}/{repository})"
+  value       = "${module.region_analysis.dominant_region}-docker.pkg.dev/${data.google_project.environment.project_id}/${google_artifact_registry_repository.research-images.name}"
 }
 
 output "artifact_registry" {
-  description = "Address of the remote repository."
+  description = "Complete Artifact Registry repository resource including all attributes and properties"
   value       = google_artifact_registry_repository.research-images
+}
+
+output "artifact_registry_id" {
+  description = "Fully qualified ID of the Artifact Registry repository in format projects/{project}/locations/{location}/repositories/{repository}"
+  value       = google_artifact_registry_repository.research-images.id
+}
+
+output "artifact_registry_region" {
+  description = "Region where the Artifact Registry repository was deployed based on dominant region analysis"
+  value       = module.region_analysis.dominant_region
 }

@@ -24,7 +24,7 @@ metadata:
   namespace: parallelstore-nodemount
 data:
   daos_agent.yml: |-
-    access_points: ['10.158.51.4', '10.158.51.2', '10.158.51.3'] # change to parallelstore server IP address
+    access_points: ['10.93.0.3', '10.93.0.4', '10.93.0.2'] # change to parallelstore server IP address
 
     credential_config:
       client_user_map:

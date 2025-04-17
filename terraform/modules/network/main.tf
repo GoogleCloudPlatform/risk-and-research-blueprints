@@ -16,75 +16,58 @@ data "google_project" "environment" {
   project_id = var.project_id
 }
 
-resource "google_compute_network" "research-vpc" {
-  name                    = "research-vpc"
-  project                 = data.google_project.environment.project_id
-  auto_create_subnetworks = false
-  mtu                     = 8896 # 10% performance gain for Parallelstore
-  # enable_ula_internal_ipv6 = true
+locals {
+  region_number = index(var.regions, var.region)
+  network_cidrs = {
+    # Each region gets a distinct /12 for pods, starting from 10.0.0.0
+    pods = cidrsubnet("10.0.0.0/8", 4, local.region_number)
+    # Nodes get a /16 from the second half of the 10.0.0.0/8 range (starting at 10.128.0.0)
+    nodes    = cidrsubnet("10.128.0.0/9", 7, local.region_number)
+    services = cidrsubnet("192.168.0.0/16", 6, local.region_number) # /22 for services
+  }
 }
 
-# Subnet Config for GKE
-# Up to 4092 node(s) per cluster.
-# Up to 64 service(s) per cluster.
-# Up to 110 pods per node.
-
-resource "google_compute_subnetwork" "cluster-1" {
-  count         = var.gke_standard_enabled ? 1 : 0
-  name          = "cluster-1"
+resource "google_compute_subnetwork" "subnet" {
+  name          = "gke-subnet-${var.region}"
   project       = data.google_project.environment.project_id
-  ip_cidr_range = "10.64.0.0/20"
+  ip_cidr_range = local.network_cidrs.nodes
   region        = var.region
-  stack_type    = "IPV4_ONLY"
+  network       = var.vpc_id
 
-  network = google_compute_network.research-vpc.id
+  # Secondary ranges for GKE
   secondary_ip_range {
-    range_name    = "services-range"
-    ip_cidr_range = "10.64.32.0/26"
+    range_name    = "pods-range-${var.region}"
+    ip_cidr_range = local.network_cidrs.pods
   }
 
   secondary_ip_range {
-    range_name    = "pod-ranges"
-    ip_cidr_range = "10.0.0.0/11"
+    range_name    = "services-range-${var.region}"
+    ip_cidr_range = local.network_cidrs.services
+  }
+
+  # Enable flow logs (optional but recommended)
+  log_config {
+    aggregation_interval = "INTERVAL_5_SEC"
+    flow_sampling        = 0.5
+    metadata             = "INCLUDE_ALL_METADATA"
   }
 }
 
-resource "google_compute_subnetwork" "cluster-2" {
-  count         = var.gke_autopilot_enabled ? 1 : 0
-  name          = "cluster-2"
-  project       = data.google_project.environment.project_id
-  ip_cidr_range = "10.64.16.0/20"
-  region        = var.region
-
-  stack_type = "IPV4_ONLY"
-
-  network = google_compute_network.research-vpc.id
-  secondary_ip_range {
-    range_name    = "services-range"
-    ip_cidr_range = "10.64.32.64/26"
-  }
-
-  secondary_ip_range {
-    range_name    = "pod-range"
-    ip_cidr_range = "10.32.0.0/11"
-  }
-}
-
+# Create Cloud Router
 resource "google_compute_router" "router" {
-  name    = "cloud-router-${var.region}"
+  name    = "gke-router-${var.region}"
   project = data.google_project.environment.project_id
   region  = var.region
-  network = google_compute_network.research-vpc.id
+  network = var.vpc_id
 
   bgp {
-    asn = 64514
+    asn = 64514 + local.region_number
   }
-
-  depends_on = [google_compute_network.research-vpc]
 }
 
+# Create NAT configuration
 resource "google_compute_router_nat" "nat" {
-  name                               = "cloud-nat-${var.region}"
+  name                               = "gke-nat-${var.region}"
   project                            = data.google_project.environment.project_id
   router                             = google_compute_router.router.name
   region                             = google_compute_router.router.region
@@ -95,7 +78,4 @@ resource "google_compute_router_nat" "nat" {
     enable = true
     filter = "ERRORS_ONLY"
   }
-
-  depends_on = [google_compute_router.router]
-
 }

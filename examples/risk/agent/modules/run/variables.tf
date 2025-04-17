@@ -75,6 +75,13 @@ variable "test_configs" {
   description = "Test configurations (parallel = 0 use autoscaler)"
 }
 
+# Enable Pub/Sub exactly once subscriptions
+variable "pubsub_exactly_once" {
+  type        = bool
+  default     = true
+  description = "Enable Pub/Sub exactly once subscriptions"
+}
+
 
 #
 # Naming defaults

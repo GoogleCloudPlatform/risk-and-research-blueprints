@@ -57,3 +57,14 @@ variable "artifact_registry" {
     name     = string
   })
 }
+
+variable "cluster_service_account" {
+  description = "Cluster Service Account"
+}
+
+# GKE Autopilot cluster name
+variable "cluster_name" {
+  type        = string
+  description = "Name of GKE cluster"
+  default     = "gke-ap-risk-research"
+}

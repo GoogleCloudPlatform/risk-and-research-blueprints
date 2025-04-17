@@ -29,3 +29,12 @@ value: 0
 preemptionPolicy: PreemptLowerPriority
 globalDefault: true
 description: "The global default priority. Will preempt placeholder Pods."
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: higher-priority
+value: 10
+preemptionPolicy: PreemptLowerPriority
+globalDefault: false
+description: "Higher Priority, will preempt placeholder Pods."

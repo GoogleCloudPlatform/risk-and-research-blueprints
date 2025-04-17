@@ -1,15 +1,7 @@
-# Deploying a DaemonSet for Node Mounting Parallelstore
-> **WARNING:** This is not an officially supported Google service. The use of this solution is on an “as-is” basis and is not a service offered under the Google Cloud Terms of Service.
+# GCSFUSE Node-Level Mount DaemonSet
+> **WARNING:** This is not an officially supported Google service. The use of this solution is on an "as-is" basis and is not a service offered under the Google Cloud Terms of Service.
 
-> **WARNING:** Google does not endorse the PoC approach described in this document for production use. This PoC is intended solely for internal testing to validate that the shared mount architecture for GCS. It should only be used for experimental purposes. Please also note that this PoC does not support Node Autoscaling, non-disruptive node upgrades, or DaemonSet updates. Any attempt at node upgrades or DaemonSet updates will require complete downtime for workloads and will result in workload failures if these actions are attempted.
-
-
-This DaemonSet mounts a Parallelstore instance (Google Cloud's high-performance storage solution) for all Pods on a GKE node to leverage the same mount point. This provides an alternate method to using the supported Parallelstore CSI driver.
-
-For more information on using the CSI Driver, please refer to the [documentation](https://cloud.google.com/parallelstore/docs/csi-driver-overview).
-
-
-# GCSFUSE Node-Level Mount Daemonset
+> **WARNING:** Google does not endorse the PoC approach described in this document for production use. This PoC is intended solely for internal testing to validate the shared mount architecture for GCS. It should only be used for experimental purposes. Please also note that this PoC does not support Node Autoscaling, non-disruptive node upgrades, or DaemonSet updates. Any attempt at node upgrades or DaemonSet updates will require complete downtime for workloads and will result in workload failures if these actions are attempted.
 
 This repository contains a Kubernetes Daemonset that deploys GCSFUSE on each node of your cluster, providing a shared mount point for accessing Google Cloud Storage (GCS).
 

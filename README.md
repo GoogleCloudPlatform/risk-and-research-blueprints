@@ -23,19 +23,27 @@ Run [Monte Carlo simulations](examples/research/monte-carlo/README.md) for VaR o
 
 ## Prerequisites
 
-- This guide expect an existing Google Cloud Project to have been created already.
-    - Project ID of a new Google Cloud Project, preferably with no APIs enabled
-    - roles/owner IAM permissions on the project
-- This guide is meant to be run on [Cloud Shell](https://shell.cloud.google.com) which comes preinstalled with the [Google Cloud SDK](https://cloud.google.com/sdk) and other tools that are required to complete this tutorial.
-- Familiarity with following
-  - [Google Kubernetes Engine](https://cloud.google.com/kubernetes-engine)
-  - [Terraform](https://www.terraform.io/)
-  - [git](https://git-scm.com/)
-  - [GitHub](https://github.com/)
+- A Google Cloud Project:
+    - Project ID of a new or existing Google Cloud Project, preferably with no APIs enabled
+    - You must have roles/owner or equivalent IAM permissions on the project
+- Development environment with:
+    - [Google Cloud SDK](https://cloud.google.com/sdk) (gcloud CLI)
+    - [Terraform](https://www.terraform.io/) (version 1.0+)
+    - [kubectl](https://kubernetes.io/docs/tasks/tools/)
+    - [git](https://git-scm.com/)
+- You can also use [Cloud Shell](https://shell.cloud.google.com) which comes preinstalled with all required tools.
+- Familiarity with:
+    - [Google Kubernetes Engine](https://cloud.google.com/kubernetes-engine)
+    - [Terraform](https://www.terraform.io/)
+    - [Kubernetes](https://kubernetes.io/)
 
-### Quota
-- The default quota given to a project should be sufficient for this guide.
-- If you would like to request more Quota, specifically Spot vCPU's and Persistent Disk, there is a [module](/terraform/modules/quota/) to support this via terraform.
+### Quota Requirements
+- The default quotas assigned to a project should be sufficient for initial testing and exploration.
+- For production workloads or larger-scale testing, you may need additional quota for:
+    - Spot vCPUs (for cost-effective batch processing)
+    - Persistent Disk capacity (for storage-intensive workloads)
+    - Monitoring API requests (for observability at scale)
+- The repository includes a [quota module](/terraform/modules/quota/) to help request these resources via Terraform.
 
 ## Project Structure
 
@@ -51,11 +59,12 @@ Run [Monte Carlo simulations](examples/research/monte-carlo/README.md) for VaR o
 └── kubernetes
     ├── kueue
     ├── compute-classes
-    ├── prioirty-classes
+    ├── priority-classes
     └── storage
-        ├── parallelstore-nodemount
+        ├── parallelstore
         ├── parallelstore-transfer-tool
-        └── gcsfuse-nodemount
+        ├── gcsfuse-nodemount
+        └── fio-testing
 └── terraform
     ├── example
     └── modules
@@ -63,6 +72,7 @@ Run [Monte Carlo simulations](examples/research/monte-carlo/README.md) for VaR o
         ├── builder
         ├── gke-autopilot
         ├── gke-standard
+        ├── lustre
         ├── network
         ├── parallelstore
         ├── project
@@ -73,40 +83,60 @@ Run [Monte Carlo simulations](examples/research/monte-carlo/README.md) for VaR o
 * **examples:** Example applications and configurations.
     * **risk:**  Example using HTC.
         * **agent:** Client-side code for the HTC example.
-        * **american-options:** Client-side code for the HTC example.
+        * **american-option:** Client-side code for the HTC example.
         * **loadtest:** Client-side code for the HTC example.
     * **research:**
         * **monte-carlo** Sample Monte Carlo calculations with Kubernetes Jobs and Kueue
-    * **infrastructure:** Sample implementation of terraform modules
+    * **infrastructure:**
+        * **infrastructure** Sample implementation of terraform modules
+        * **multi-quota** Sample of how to request quota with terraform
 * **kubernetes:** Kubernetes-specific configurations.
     * **compute-classes:** Examples of custom compute classes.
+    * **priority-classes:** Priority class configurations.
     * **kueue:** Kueue + GMP configurations
     * **storage:** Storage configurations.
         * **parallelstore:** Parallelstore node-mount setup.
-        * **gcs:** Google Cloud Storage node-mount setup.
+        * **parallelstore-transfer-tool:** Utility for transferring data to/from Parallelstore.
+        * **gcsfuse-nodemount:** Google Cloud Storage FUSE node-mount setup.
+        * **fio-testing:** FIO benchmarking tools for storage testing.
 * **terraform:** Terraform modules for infrastructure provisioning.
     * **modules:** Reusable Terraform modules.
         * **artifact-registry:** Module for setting up Artifact Registry.
+        * **builder:** Module for CI/CD build configuration.
         * **gke-autopilot:** Module for deploying a GKE Autopilot cluster.
         * **gke-standard:** Module for deploying a GKE Standard cluster.
+        * **kubectl:** Module for kubectl provider configuration.
+        * **lustre:** Module for provisioning Lustre.
         * **network:**  Module for configuring network settings.
         * **parallelstore:** Module for provisioning Parallelstore.
         * **project:** Module for setting up a Google Cloud project.
+        * **pubsub-subscriptions:** Module for PubSub subscription configuration.
         * **quota:** Module for requesting quota to support running the examples at larger scales.
+        * **region-analysis:** Module for analyzing available resources across regions.
 
 ## Getting Started
 
-Explore the examples:
+Follow these steps to get started with the Risk and Research Blueprints:
 
-1. Risk
-    - Run local jobs to calculate American Option prices - [examples/risk/american-option/readme](examples/risk/american-option/README.md)
-    - Run a load test of the infrastrcture platform - [examples/risk/loadtest/readme](examples/risk/loadtest/README.md)
+1. **Set up your Infrastructure:**
+   - For a complete infrastructure setup, follow the steps in [examples/infrastructure/infrastructure](examples/infrastructure/infrastructure/README.md)
+   - This will deploy a GKE cluster, Artifact Registry, and other foundational components
 
-2. Research
-    - Follow the steps in the [/examples/research/monte-carlo/readme](/examples/research/monte-carlo/README.md)
+2. **Explore Risk Examples:**
+   - Run calculations for American Option pricing: [examples/risk/american-option](examples/risk/american-option/README.md)
+   - Test your infrastructure with a scalable load test: [examples/risk/loadtest](examples/risk/loadtest/README.md)
+   - Understand agent-based architecture: [examples/risk/agent](examples/risk/agent/README.md)
 
-3. Deploy an empty infrastructure setup:
-    - Follow the steps in in [/examples/infrastructure/readme](/examples/infrastructure/README.md)
+3. **Try Research Examples:**
+   - Run Monte Carlo simulations for Value at Risk (VaR): [examples/research/monte-carlo](examples/research/monte-carlo/README.md)
+   - Visualize results in BigQuery and Vertex AI Notebooks
+
+4. **Explore Storage Solutions:**
+   - Test high-performance storage with FIO benchmarks: [kubernetes/storage/fio-testing](kubernetes/storage/fio-testing/README.md)
+   - Set up Parallelstore: [kubernetes/storage/parallelstore](kubernetes/storage/parallelstore/README.md)
+
+5. **Configure Workload Management:**
+   - Learn about Kueue for job scheduling: [kubernetes/kueue](kubernetes/kueue/README.md)
 
 ## Contributing
 If you would like to contribute to this project, please consult our [how to contribute](./docs/contributing.md) guide.

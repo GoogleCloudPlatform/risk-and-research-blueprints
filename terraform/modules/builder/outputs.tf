@@ -14,7 +14,7 @@
 
 # Image for building
 output "status" {
-  description = "Image and tag names for build containers"
+  description = "Container build status information including image URLs, tags, and build metadata for all containers built by Cloud Build"
   value       = local.container_status
 
   depends_on = [

@@ -21,13 +21,12 @@ RUN apt-get update && \
     jq \
     python3 \
     python3-pip \
+    tini \
     && rm -rf /var/lib/apt/lists/*
 
 # Create directories for tests and results
 RUN mkdir -p /fio/jobs /fio/results
 
-# Copy entrypoint script
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/usr/bin/tini", "--"]
 
-ENTRYPOINT ["/entrypoint.sh"]
+CMD ["sh", "-c", "echo Using config file: $CONFIG_PATH; fio --directory=$MOUNT_PATH --output-format=json+ $CONFIG_PATH | jq -c"]

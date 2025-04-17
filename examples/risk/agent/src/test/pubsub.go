@@ -36,13 +36,14 @@ import (
 func NewPubSubGenerator(src *Source, stats *stats.StatsConfig, google *gcp.GoogleConfig) *cobra.Command {
 
 	jsonPubSub := true
-
+	maxMessagesOutstanding := 250000
 	cmd := &cobra.Command{
 		Use:   "pubsub <topic> [subscription]",
 		Short: "Pubsub roundtrip throughput and latency tests",
 		Args:  cobra.RangeArgs(1, 2),
 	}
-	cmd.Flags().BoolVar(&jsonPubSub, "jsonPubSub", true, "Enable JSON in Pub/Sub instead of byte-encoded protobuf")
+	cmd.Flags().BoolVar(&jsonPubSub, "jsonPubSub", jsonPubSub, "Enable JSON in Pub/Sub instead of byte-encoded protobuf")
+	cmd.Flags().IntVar(&maxMessagesOutstanding, "maxMessagesOutstanding", maxMessagesOutstanding, "Maximum messages outstanding on publish")
 
 	cmd.RunE = func(c *cobra.Command, args []string) error {
 		slog.Info("Statistics are for messages (ops/second = messages per second).")
@@ -62,6 +63,7 @@ func NewPubSubGenerator(src *Source, stats *stats.StatsConfig, google *gcp.Googl
 			sub := client.SubscriptionInProject(args[1], google.ProjectID)
 			sub.ReceiveSettings.MaxOutstandingBytes = -1
 			sub.ReceiveSettings.MaxOutstandingMessages = -1
+
 			go func() {
 				msgReceiver := getMessageReceiver(stats, jobNum)
 				if err := sub.Receive(c.Context(), msgReceiver); err != nil {
@@ -71,7 +73,12 @@ func NewPubSubGenerator(src *Source, stats *stats.StatsConfig, google *gcp.Googl
 		}
 
 		// Start the source of test data
-		publishOp := getMessagePublisher(stats, client.Topic(args[0]), jobNum)
+		topic := client.Topic(args[0])
+		if maxMessagesOutstanding > 0 {
+			topic.PublishSettings.FlowControlSettings.MaxOutstandingMessages = maxMessagesOutstanding
+			topic.PublishSettings.FlowControlSettings.LimitExceededBehavior = pubsub.FlowControlBlock
+		}
+		publishOp := getMessagePublisher(stats, topic, jobNum)
 
 		// Start publishing
 		slog.Debug("Publishing", "project", google.ProjectID, "topic", args[0])
@@ -100,22 +107,27 @@ func NewPubSubGenerator(src *Source, stats *stats.StatsConfig, google *gcp.Googl
 }
 
 func getMessageReceiver(stats *stats.StatsConfig, jobNum int64) func(ctxt context.Context, msg *pubsub.Message) {
+
 	return func(ctxt context.Context, msg *pubsub.Message) {
 
 		// Debug
 		slog.Debug("Receiving response", "response", msg)
 
 		// Always ack for received messages
-		r := msg.AckWithResult()
+		var r *pubsub.AckResult = nil
+		r = msg.AckWithResult()
 
-		// Block until the result is returned and a pubsub.AcknowledgeStatus
+		// If exactly once enabled and there is an ack reslut,
+		// block until the result is returned and a pubsub.AcknowledgeStatus
 		// is returned for the acked message.
-		status, err := r.Get(ctxt)
-		if err != nil {
-			slog.Warn("Failed when calling result.Get", "error", err, "msg", msg.ID)
-		}
-		if status != pubsub.AcknowledgeStatusSuccess {
-			slog.Warn("Message acknowledged failed", "status", status, "id", msg.ID, "attributes", msg.Attributes)
+		if r != nil {
+			status, err := r.Get(ctxt)
+			if err != nil {
+				slog.Warn("Failed when calling result.Get", "error", err, "msg", msg.ID)
+			}
+			if status != pubsub.AcknowledgeStatusSuccess {
+				slog.Warn("Message acknowledged failed", "status", status, "id", msg.ID, "attributes", msg.Attributes)
+			}
 		}
 
 		// Record performance of this single message and size of the message

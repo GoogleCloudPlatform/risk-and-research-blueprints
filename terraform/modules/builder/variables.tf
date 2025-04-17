@@ -24,6 +24,12 @@ variable "region" {
   description = "The region of the build"
 }
 
+variable "repository_region" {
+  type        = string
+  description = "Artifacte Repository region"
+
+}
+
 # Repository ID
 variable "repository_id" {
   type        = string

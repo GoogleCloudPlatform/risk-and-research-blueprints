@@ -22,14 +22,21 @@ variable "project_id" {
   }
 }
 
-variable "region" {
-  description = "The region to host the cluster in"
-  type        = string
-  default     = "us-central1"
+# Region for resource deployment (default: us-central1)
+variable "regions" {
+  description = "List of regions where GKE clusters will be deployed - used to determine the multi-region location"
+  type        = list(string)
+  default     = ["us-central1"]
 }
 
 variable "name" {
   description = "Name of the Artifact Registry"
   type        = string
   default     = "research-images"
+}
+
+variable "cleanup_keep_count" {
+  description = "Number of most recent container image versions to keep in Artifact Registry cleanup policy"
+  type        = number
+  default     = 10
 }

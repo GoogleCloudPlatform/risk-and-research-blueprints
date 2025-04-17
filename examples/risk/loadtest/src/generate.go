@@ -182,6 +182,7 @@ func AddGenTasksCommand(rootCmd *cobra.Command) {
 							PercFail:   percFail,
 							MaxMicros:  maxMicros,
 							MinMicros:  minMicros,
+							ReadDir:    readDir,
 							ReadFile:   readFile,
 							WriteFile:  writeFile,
 							WriteBytes: writeBytes,

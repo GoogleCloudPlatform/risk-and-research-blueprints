@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Calculate network ranges based on region index
+
 variable "project_id" {
   description = "The GCP project where the resources will be created"
   type        = string
@@ -28,14 +30,19 @@ variable "region" {
   default     = "us-central1"
 }
 
-variable "gke_standard_enabled" {
-  type        = bool
-  description = "Enable GKE Standard"
-  default     = true
+# Region for resource deployment (default: us-central1)
+variable "regions" {
+  description = "List of regions where GKE clusters should be created"
+  type        = list(string)
+  default     = ["us-central1"]
 }
 
-variable "gke_autopilot_enabled" {
-  type        = bool
-  description = "Enable GKE Autopilot"
-  default     = false
+variable "vpc_id" {
+  description = "ID of the shared VPC network"
+  type        = string
+}
+
+variable "vpc_name" {
+  description = "Name of the shared VPC network"
+  type        = string
 }

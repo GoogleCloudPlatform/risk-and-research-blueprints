@@ -31,7 +31,7 @@ resource "google_pubsub_subscription" "sub_req" {
   project                      = google_pubsub_topic.topic_req[0].project
   topic                        = google_pubsub_topic.topic_req[0].name
   name                         = "${var.run_job_request}_sub"
-  enable_exactly_once_delivery = true
+  enable_exactly_once_delivery = var.pubsub_exactly_once
   ack_deadline_seconds         = 60
   expiration_policy {
     ttl = ""
@@ -154,7 +154,7 @@ resource "google_cloud_run_v2_job" "workload_worker" {
           # are pulled from Pub/Sub, as if they are chunky in size they need to be
           # evenly distributed.
           # Maximum number of goroutines executing
-          "--goroutines", "2",
+          "--goroutines", "1",
           # Maximum number of outstanding messages
           "--maxoutstandingmessages", "1",
         ]

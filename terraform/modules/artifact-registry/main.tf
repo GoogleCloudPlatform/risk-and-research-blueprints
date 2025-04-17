@@ -17,22 +17,30 @@ data "google_project" "environment" {
   project_id = var.project_id
 }
 
+module "region_analysis" {
+  source  = "../region-analysis"
+  regions = var.regions
+}
+
 # Artifact Registry
 resource "google_artifact_registry_repository" "research-images" {
   project       = var.project_id
-  location      = var.region
+  location      = module.region_analysis.dominant_region
   repository_id = var.name
-  description   = "Images"
+  description   = "Multi-region artifact registry in ${module.region_analysis.dominant_region}"
   format        = "DOCKER"
-  # Keep only 10 latest images in docker repo
+  # Keep only the most recent image versions based on cleanup_keep_count
   cleanup_policies {
     id     = "keep-minimum-versions"
     action = "KEEP"
     most_recent_versions {
-      keep_count = 10
+      keep_count = var.cleanup_keep_count
     }
   }
-  # docker_config {
-  #     immutable_tags = true
-  # }
+  lifecycle {
+    precondition {
+      condition     = module.region_analysis.region_counts[module.region_analysis.dominant_region] > 0
+      error_message = "Could not determine appropriate multi-region location from provided regions: ${jsonencode(var.regions)}"
+    }
+  }
 }

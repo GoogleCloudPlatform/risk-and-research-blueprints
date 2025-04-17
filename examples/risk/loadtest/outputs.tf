@@ -15,13 +15,13 @@
 # Credentials for Kubernetes
 output "get_credentials" {
   description = "Get Credentials command"
-  value       = length(module.gke) > 0 ? module.gke[0].get_credentials : ""
+  value       = length(module.gke) > 0 ? module.gke.get_credentials : {}
 }
 
 # Dashboard for monitoring performance
 output "monitoring_dashboard_url" {
   description = "Monitoring dashboard"
-  value       = length(module.gke) > 0 ? module.gke[0].monitoring_dashboard_url : ""
+  value       = length(module.gke) > 0 ? module.gke.monitoring_dashboard_url : ""
 }
 
 # Dashboard for monitoring Pub/Sub and logs
@@ -57,4 +57,22 @@ output "local_test_scripts" {
 output "ui_image" {
   description = "Image for the UI"
   value       = var.ui_image_enabled ? module.ui_image[0].status["ui"].image : ""
+}
+
+# output "debug_test_scripts" {
+#   value = {
+#     for config in local.test_configs : config.name => {
+#       matching_scripts = [for script in module.gke.test_scripts_list : script if strcontains(script, config.name)]
+#       script_count     = length([for script in module.gke.test_scripts_list : script if strcontains(script, config.name)])
+#     }
+#   }
+# }
+
+output "cluster_service_account" {
+  description = "The service account used by GKE clusters"
+  value = {
+    email = module.infrastructure.cluster_service_account.email
+    id    = module.infrastructure.cluster_service_account.id
+    name  = module.infrastructure.cluster_service_account.name
+  }
 }

@@ -22,26 +22,40 @@ output "topics" {
   ]
 }
 
-# Helper for fetching credentials for Kubernetes
-output "get_credentials" {
-  description = "Command for gcloud get credentials"
-  value       = "gcloud container clusters get-credentials --project ${var.project_id} --location ${var.region} ${var.cluster_name}"
-}
-
 # Dashboard for Platform Overview
 output "monitoring_dashboard_url" {
   description = "Cloud Monitoring dashboard"
   value       = "https://console.cloud.google.com/monitoring/dashboards/builder/${regex("projects/[0-9]+/dashboards/(.*)$", google_monitoring_dashboard.risk-platform-overview.id)[0]};project=${var.project_id}"
 }
 
-# Cluster
-output "cluster_url" {
-  description = "Cluster url"
-  value       = "https://console.cloud.google.com/kubernetes/workload/overview?project=${var.project_id}&pageState=(%22savedViews%22:(%22n%22:%5B%22default%22%5D,%22c%22:%5B%22gke%2F${var.region}%2F${module.gke_standard[0].cluster_name}%22%5D))"
+# Test scripts (shell scripts)
+output "test_scripts_list" {
+  description = "Test configuration shell scripts as a list"
+  value = flatten([
+    for cluster_module in module.config_apply : [
+      for script_id, script in cluster_module.test_scripts : script
+    ]
+  ])
 }
 
-# Test scripts (shell scripts)
-output "test_scripts" {
-  description = "Test configuration shell scripts"
-  value       = local.test_shell
+output "first_test_script" {
+  description = "First test script"
+  value       = module.config_apply[0].test_scripts
+}
+
+# Cluster
+output "cluster_urls" {
+  description = "Cluster urls"
+  value = {
+    for idx, cluster in var.gke_clusters :
+    cluster.cluster_name => "https://console.cloud.google.com/kubernetes/workload/overview?project=${var.project_id}&pageState=(%22savedViews%22:(%22n%22:%5B%22default%22%5D,%22c%22:%5B%22gke%2F${cluster.region}%2F${cluster.cluster_name}%22%5D))"
+  }
+}
+
+output "get_credentials" {
+  description = "Commands for getting credentials for each GKE cluster"
+  value = {
+    for idx, cluster in var.gke_clusters :
+    cluster.cluster_name => "gcloud container clusters get-credentials ${cluster.cluster_name} --project ${var.project_id} --location ${cluster.region}"
+  }
 }

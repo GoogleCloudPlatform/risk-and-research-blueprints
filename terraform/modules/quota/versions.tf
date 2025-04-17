@@ -16,14 +16,14 @@ terraform {
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = "~> 6.24.0"
+      version = "~> 6.29.0"
     }
     google-beta = {
       source  = "hashicorp/google-beta"
-      version = "~> 6.24.0"
+      version = "~> 6.29.0"
     }
   }
-  # provider_meta "google" {
-  #   module_name = "cloud-solutions/risk-and-research-blueprints-v1"
-  # }
+  provider_meta "google" {
+    module_name = "cloud-solutions/fsi-rdp-infrastructure-v1.0.0"
+  }
 }

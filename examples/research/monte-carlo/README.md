@@ -17,7 +17,7 @@ environment variables.
 The overall structure of this tutorial is as follows:
 
 * The Monte Carlo simulation is managed with
-  [Batch](https://cloud.google.com/batch/docs/get-started).
+  [Kueue](https://cloud.google.com/kubernetes-engine/docs/tutorials/kueue-intro).
 * The output of the Monte Carlo simulation is published to a
   [PubSub](https://cloud.google.com/pubsub/docs/overview) topic.
 * The PubSub data is entered into [BigQuery](https://cloud.google.com/bigquery)
@@ -26,7 +26,7 @@ via a [PubSub BigQuery subscription](https://cloud.google.com/pubsub/docs/bigque
   [Vertex AI Workbench](https://cloud.google.com/vertex-ai-workbench)
   [Jupyter Notebook](https://jupyter.org/)
 
-<img src="https://services.google.com/fh/files/blogs/fsi_architecture.png" width="800" />
+<img src="https://services.google.com/fh/files/blogs/gke_arch.png" width="800" />
 
 
 ## Cost to run
@@ -46,19 +46,19 @@ account. Please validate with the
 
 ### Kubernetes Cluster, GKE
 
-> If you have an existing Kubernetes Cluster you can step.
+> If you have an existing Kubernetes Cluster you can skip this step.
 
 1. Clone this repository
-1. `cd` to `research-platform-for-fsi/examples/research/monte-carlo`
+1. `cd` to `risk-and-research-blueprints/examples/research/monte-carlo`
 1. Edit the `variables.tf` file to update `project_id` and if you choose, `region`.
 1. Run `terraform init`
 1. Run `terraform apply`
 
-This will create a GKE kubernetes cluster, `gke-risk-research` in your project.
+This will create a GKE kubernetes cluster, `gke-risk-research-us-central1-0` in your project.
 
 Once complete, authenticate to the cluster.
 ```
-gcloud container clusters get-credentials gke-risk-research --region us-central1
+gcloud container clusters get-credentials gke-risk-research-us-central1-0 --region us-central1
 ```
 
 Now the cluster build is complete and you are authenticated, install Kueue and Kueue Configurations:
@@ -89,27 +89,27 @@ You should install this in your $HOME directory. Then you can test it:
 ```
 
 ### Build docker container and send to Artifact Registry
-To efficiently run the code required for this tutorial, you must build a docker container
+To efficiently run the code required for this tutorial, you must build a docker container with
 Python installed with the relevant libraries and local Python scripts. You then send it to
-Google Cloud Aritifact Registry, in a repository called `research-images`. This work is
+Google Cloud Artifact Registry, in a repository called `research-images`. This work is
 managed by Google Cloud Build.
 
 Run Google Cloud Build as follows:
-1. `cd` to `research-platform-for-fsi/examples/research/monte-carlo/src/docker`
+1. `cd` to `risk-and-research-blueprints/examples/research/monte-carlo/src/docker`
 
 ```
 gcloud builds submit --region=us-central1 --config cloudbuild.yaml
 ```
-Ensure that `us-central1` is the region your cluster ended up in.
+Ensure that `us-central1` is the region your cluster is deployed in.
 
 ### Install the tutorial code
 
-This tutorial is part of the `research-platform-for-fsi` repository.
+This tutorial is part of the `risk-and-research-blueprints` repository.
 
-1. `cd` to `research-platform-for-fsi/examples/research/monte-carlo/src`
+1. `cd` to `risk-and-research-blueprints/examples/research/monte-carlo/src`
 1. Run `gcluster`
 ```
-~/cluster-toolkit/gcluster deploy fsi-montecarlo-on-gke.yaml \
+~/cluster-toolkit/gcluster deploy fsi-montecarlo-on-batch.yaml \
    --vars "project_id=${GOOGLE_CLOUD_PROJECT}"
 ```
 
@@ -124,7 +124,7 @@ If the Notebook instance is complete, **"OPEN JUPYTERLAB"** will be listed. If n
 
 > Open JupyterLab on the Notebook instance listed.
 
-<img src="https://services.google.com/fh/files/blogs/fsi_workbench.png" width="500" />
+<img src="https://services.google.com/fh/files/blogs/gke_workbench.png" width="500" />
 
 ```bash
 Click on `OPEN JUPYTERLAB` link
@@ -138,7 +138,7 @@ Select `data`
 
 > Under `data` all the files required to run the demo have been pepared.
 
-<img src="https://services.google.com/fh/files/blogs/fsi_files.png" width="300" />
+<img src="https://services.google.com/fh/files/blogs/gke_files.png" width="300" />
 
 > Open a terminal window by clicking on the terminal icon.
 

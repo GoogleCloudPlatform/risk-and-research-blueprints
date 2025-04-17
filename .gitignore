@@ -12,6 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Dev tools
+flake.lock
+flake.nix
+
+.envrc
+solutions/
+.direnv
+
 # Compiled files
 *.tfstate
 *.tfstate.backup

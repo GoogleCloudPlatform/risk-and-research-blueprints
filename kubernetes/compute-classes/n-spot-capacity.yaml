@@ -18,31 +18,28 @@ metadata:
   name: spot-capacity
 spec:
   autoscalingPolicy:
-    consolidationDelayMinutes: 2 # Mark a node as eligible for scale down after 1 minute at 10% utilisation
-    consolidationThreshold: 30 # Very low threshold to encourage node packing
+    consolidationDelayMinutes: 2
+    consolidationThreshold: 70
   nodePoolAutoCreation:
     enabled: true
   priorities:
+  - nodepools: [spot-nodes-1]
   - machineFamily: "n2"
-    minCores: 4 # Ensure enough CPU for HPC tasks
-    minMemoryGb: 16 # Ensure enough memory for HPC tasks
-    spot: true # Use spot instances for cost savings
-  - machineFamily: "n2d"
-    minCores: 4 # Ensure enough CPU for HPC tasks
-    minMemoryGb: 16 # Ensure enough memory for HPC tasks
-    spot: true # Use spot instances for cost savings
+    minCores: 4
+    minMemoryGb: 16
+    spot: true
+  - machineFamily: "e2"
+    minCores: 4
+    minMemoryGb: 16
+    spot: true
   - machineFamily: "n1"
-    minCores: 4 # Ensure enough CPU for HPC tasks
-    minMemoryGb: 16 # Ensure enough memory for HPC tasks
-    spot: true # Use spot instances for cost savings
+    minCores: 4
+    minMemoryGb: 16
+    spot: true
   - machineFamily: "n4"
-    minCores: 4 # Ensure enough CPU for HPC tasks
-    minMemoryGb: 16 # Ensure enough memory for HPC tasks
-    spot: true # Use spot instances for cost savings
-  - machineFamily: "n2" # Fall back to on demand in case there is no Spot Quota
-    minCores: 4 # Ensure enough CPU for HPC tasks
-    minMemoryGb: 16 # Ensure enough memory for HPC tasks
-    spot: false # Use spot instances for cost savings
-  whenUnsatisfiable: ScaleUpAnyway # Required for Autopilot
+    minCores: 4
+    minMemoryGb: 16
+    spot: true
+  whenUnsatisfiable: ScaleUpAnyway
   activeMigration:
-    optimizeRulePriority: false # Prioritize moving workloads to optimal instances
+    optimizeRulePriority: false

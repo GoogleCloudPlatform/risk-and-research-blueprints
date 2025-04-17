@@ -111,12 +111,20 @@ repos:
 #
 
 # Formatting and validation
-- repo: https://github.com/AleksaC/terraform-py
-  rev: v1.9.8
-  hooks:
-    - id: tf-fmt
-    - id: tf-validate
+# - repo: https://github.com/AleksaC/terraform-py
+#   rev: v1.9.8
+#   hooks:
+#     - id: tf-fmt
+#     - id: tf-validate
 
+- repo: https://github.com/antonbabenko/pre-commit-terraform
+  rev: v1.99.0
+  hooks:
+    - id: terraform_fmt
+    - id: terraform_validate
+      args:
+      - --tf-init-args=-upgrade
+      - --hook-config=--retry-once-with-cleanup=true
 
 
 #####

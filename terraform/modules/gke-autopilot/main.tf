@@ -27,7 +27,7 @@ resource "google_container_cluster" "default" {
   enable_autopilot = true
 
   node_config {
-    # service_account = google_service_account.cluster_service_account.email
+    # service_account = var.cluster_service_account.email
     gvnic {
       enabled = true
     }
@@ -56,7 +56,7 @@ resource "google_container_cluster" "default" {
 
   cluster_autoscaling {
     auto_provisioning_defaults {
-      service_account = google_service_account.cluster_service_account.email
+      service_account = var.cluster_service_account.email
       oauth_scopes = [
         "https://www.googleapis.com/auth/cloud-platform"
       ]
@@ -116,16 +116,10 @@ resource "google_container_cluster" "default" {
 
 }
 
-resource "google_service_account" "cluster_service_account" {
-  account_id   = "gke-cluster-sa"
-  display_name = "gke-cluster-sa"
-  project      = data.google_project.environment.project_id
-}
-
 resource "google_project_iam_member" "monitoring_viewer" {
   project = data.google_project.environment.project_id
   role    = "roles/container.serviceAgent"
-  member  = "serviceAccount:${google_service_account.cluster_service_account.email}"
+  member  = "serviceAccount:${var.cluster_service_account.email}"
 }
 
 resource "google_artifact_registry_repository_iam_member" "artifactregistry_reader" {
@@ -133,5 +127,5 @@ resource "google_artifact_registry_repository_iam_member" "artifactregistry_read
   location   = var.artifact_registry.location
   repository = var.artifact_registry.name
   role       = "roles/artifactregistry.reader"
-  member     = "serviceAccount:${google_service_account.cluster_service_account.email}"
+  member     = "serviceAccount:${var.cluster_service_account.email}"
 }

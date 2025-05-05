@@ -36,6 +36,7 @@ data "google_container_engine_versions" "central1b" {
   provider       = google-beta
   location       = var.region
   version_prefix = var.min_master_version
+  project        = var.project_id
 }
 
 resource "google_container_cluster" "risk-research" {

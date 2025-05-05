@@ -55,6 +55,12 @@ Authorize `gcloud` if needed:
 gcloud auth login  --quiet --update-adc
 ```
 
+Update the `gcloud` project:
+
+```bash
+gcloud config set project YOUR_PROJECT_ID
+```
+
 You may need to enable some basic APIs for Terraform to work:
 ```sh
 gcloud services enable iam.googleapis.com cloudresourcemanager.googleapis.com

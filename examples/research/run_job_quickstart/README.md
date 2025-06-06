@@ -30,7 +30,7 @@ cat input.csv
 ./sample.py input.csv output-local.csv 100
 ```
 
-```
+```sh
 cat output-local.csv
 ```
 
@@ -145,6 +145,10 @@ Launch four jobs directly against the bucket data.
 ```
 
 Launch ten jobs directly with staging of local data to and from the GCS bucket.
+
+```sh
+gcloud auth login --update-adc
+```
 
 ```sh
 ./launch-gcs.py ${BUCKET} ${JOB_ID} input.csv output-j3-MULTIPLIER.csv $(seq 121 130)

@@ -3,41 +3,27 @@
 # /// script
 # dependencies = [
 #     "google-cloud-run>=0.10.17",
-#     "gcloud-aio-storage>=9.4.0",
 # ]
 # ///
 
-#     "gcloud-aio-auth>=5.4.2",
 
 import argparse
 import asyncio
 import sys
 
 from google.cloud import run_v2
-from gcloud.aio.storage import Storage
-from uuid import uuid4
-from pathlib import Path
 
 
 async def run_process(
-        bucket,
         job_id,
         infile,
         outfile,
         multipliers):
-        # Upload input
-    remote_infile = f'{uuid4()}{''.join(Path(infile).suffixes)}'
-    remote_outfile = f'{uuid4()}{''.join(Path(outfile).suffixes)}'
-
-    print(f'Upload {infile} to gs://{bucket}/{remote_infile}')
-    async with Storage() as client:
-        await client.upload_from_filename(bucket, remote_infile, infile)
 
     jobs_client = run_v2.JobsAsyncClient()
 
     async def launch(m):
         m_outfile = outfile.replace('MULTIPLIER', str(m))
-        m_remote_outfile = remote_outfile.replace('MULTIPLIER', str(m))
 
         print(f'Launching job {m}')
         operation = await jobs_client.run_job(request=run_v2.RunJobRequest(
@@ -46,8 +32,8 @@ async def run_process(
                 container_overrides=[
                     run_v2.RunJobRequest.Overrides.ContainerOverride(
                         args=[
-                            f'gs://{bucket}/{remote_infile}',
-                            f'gs://{bucket}/{m_remote_outfile}',
+                            infile,
+                            m_outfile,
                             str(m)],
                     ),
                 ],
@@ -55,17 +41,12 @@ async def run_process(
         ))
         await operation.result()
 
-        print(f'Downloading gs://{bucket}/{m_remote_outfile} to {m_outfile}')
-        async with Storage() as client:
-            await (client.download_to_filename(bucket, m_remote_outfile, m_outfile))
-
     # Run them all
     await asyncio.gather(*[launch(m) for m in multipliers])
 
 
 def main(args):
-    parser = argparse.ArgumentParser(prog='launch sample with GCS staging')
-    parser.add_argument('bucket', type=str)
+    parser = argparse.ArgumentParser(prog='launch sample')
     parser.add_argument('job_id', type=str)
     parser.add_argument('infile', type=str)
     parser.add_argument('outfile', type=str)
@@ -74,7 +55,6 @@ def main(args):
     args = parser.parse_args()
 
     asyncio.run(run_process(
-        bucket=args.bucket,
         job_id=args.job_id,
         infile=args.infile,
         outfile=args.outfile,

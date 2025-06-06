@@ -6,5 +6,5 @@ RUN pip install --require-hashes -r /app/requirements.txt
 
 COPY *.py /app/
 
-ENTRYPOINT [ "/usr/local/bin/python3", "/app/test_process.py" ]
+ENTRYPOINT [ "/usr/local/bin/python3", "/app/sample.py" ]
 

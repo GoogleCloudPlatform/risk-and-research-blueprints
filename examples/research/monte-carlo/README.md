@@ -56,7 +56,7 @@ account. Please validate with the
 
 This will create a GKE kubernetes cluster, `gke-risk-research-us-central1-0` in your project.
 
-Once complete, authenticate to the cluster.
+Once complete, authenticate to the cluster. The [gke-gcloud-auth-plugin](https://cloud.google.com/kubernetes-engine/docs/how-to/cluster-access-for-kubectl#install_plugin) is required to run this command.
 ```
 gcloud container clusters get-credentials gke-risk-research-us-central1-0 --region us-central1
 ```
@@ -110,10 +110,10 @@ This tutorial is part of the `risk-and-research-blueprints` repository.
 1. Run `gcluster`
 ```
 ~/cluster-toolkit/gcluster deploy fsi-montecarlo-on-batch.yaml \
-   --vars "project_id=${GOOGLE_CLOUD_PROJECT}"
+   --vars "project_id=${GOOGLE_CLOUD_PROJECT},cluster_name=${GKE_CLUSTER_NAME}"
 ```
 
-Ensure that the $GOOGLE_CLOUD_PROJECT variable is set to your project ID.
+Ensure that the $GOOGLE_CLOUD_PROJECT variable is set to your project ID, and the $GKE_CLUSTER_NAME variable is set to your GKE cluster name.
 
 ### Open the Vertex AI Workbench Notebook
 When the deployment is complete, you can connect to the Vertex AI Workbench Notebook. Navigate to:

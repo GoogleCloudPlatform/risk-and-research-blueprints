@@ -128,6 +128,8 @@ module "infrastructure" {
   max_nodes_ondemand         = var.max_nodes_ondemand
   min_nodes_spot             = var.min_nodes_spot
   max_nodes_spot             = var.max_nodes_spot
+  cluster_max_cpus           = var.cluster_max_cpus
+  cluster_max_memory         = var.cluster_max_memory
 
   # Storage Configuration
   storage_type                  = var.storage_type

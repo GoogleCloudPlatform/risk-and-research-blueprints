@@ -56,7 +56,7 @@ account. Please validate with the
 
 This will create a GKE kubernetes cluster, `gke-risk-research-us-central1-0` in your project.
 
-Once complete, authenticate to the cluster.
+Once complete, authenticate to the cluster. The [gke-gcloud-auth-plugin](https://cloud.google.com/kubernetes-engine/docs/how-to/cluster-access-for-kubectl#install_plugin) is required to run this command.
 ```
 gcloud container clusters get-credentials gke-risk-research-us-central1-0 --region us-central1
 ```

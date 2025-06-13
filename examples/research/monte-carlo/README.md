@@ -110,10 +110,10 @@ This tutorial is part of the `risk-and-research-blueprints` repository.
 1. Run `gcluster`
 ```
 ~/cluster-toolkit/gcluster deploy fsi-montecarlo-on-batch.yaml \
-   --vars "project_id=${GOOGLE_CLOUD_PROJECT}"
+   --vars "project_id=${GOOGLE_CLOUD_PROJECT},cluster_name=${GKE_CLUSTER_NAME}"
 ```
 
-Ensure that the $GOOGLE_CLOUD_PROJECT variable is set to your project ID.
+Ensure that the $GOOGLE_CLOUD_PROJECT variable is set to your project ID, and the $GKE_CLUSTER_NAME variable is set to your GKE cluster name.
 
 ### Open the Vertex AI Workbench Notebook
 When the deployment is complete, you can connect to the Vertex AI Workbench Notebook. Navigate to:

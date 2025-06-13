@@ -7,7 +7,7 @@ It includes integration with Google Cloud Monitoring and Google Cloud Managed Se
 
 **Prerequisites:**
 
-- Kustomize: Ensure you have Kustomize installed on your system. You can download it from the official Kustomize releases page.
+- Kustomize: Ensure you have Kustomize installed on your system. You can download it from the official [Kustomize](https://kubectl.docs.kubernetes.io/installation/kustomize/) releases page.
 - kubectl: You'll need kubectl to interact with your Kubernetes cluster.
 
 ## Deploy Kueue with GMP Configuration and Cloud Monitoring Dashboard

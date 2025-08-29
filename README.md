@@ -151,7 +151,7 @@ This solution is under active development. Interfaces and functionality may chan
 ## License
 
 This repository is licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0.txt) (
-see [LICENSE](LICENSE.txt)). The solution includes declarative markdown files that are interpretable by certain
+see [LICENSE](LICENSE)). The solution includes declarative markdown files that are interpretable by certain
 third-party technologies (e.g., Terraform and DBT). These files are for informational use only and do not constitute an
 endorsement of those technologies, including any warranties, representations, or other guarantees as to their security,
 reliability, or suitability for purpose.

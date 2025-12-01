@@ -194,8 +194,9 @@ googleapis-common-protos==1.66.0 \
     # via
     #   google-api-core
     #   grpcio-status
-gradio==5.20.0 \
-    --hash=sha256:85e649611c343fa6c2cff50e3f6a662046158bf592eb954dffdca24e896185e5
+gradio==5.31.0 \
+    --hash=sha256:4a31956c7290ce1277db07f15f197b602df2e7be147083136265d52e7887b156 \
+    --hash=sha256:fba0c84d69cf489938eb64bef4c19d53300eb9af62e8cc0b12e02ae9072b7623
     # via agent-ui
 gradio-client==1.7.2 \
     --hash=sha256:50d61b4db3e87639430a121a7cde4303055486ed72a5035edae94b4fbe6a0e6b \

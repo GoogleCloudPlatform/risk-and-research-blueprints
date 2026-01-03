@@ -1,4 +1,3 @@
-
 # Create Agent Container and Setup
 
 ## Overview
@@ -43,7 +42,7 @@ docker push ${REPO}/htcexample:latest
 ### Create the staging bucket
 
 ```sh
-gsutil mb -l ${REGION} gs://${GOOGLE_CLOUD_PROJECT}-data/
+gcloud storage buckets create --location ${REGION} gs://${GOOGLE_CLOUD_PROJECT}-data/
 ```
 
 ### Generate example data
@@ -51,6 +50,6 @@ gsutil mb -l ${REGION} gs://${GOOGLE_CLOUD_PROJECT}-data/
 Generate 10,000 lines of test data into a GZIP'd JSONL file in GCS.
 
 ```sh
-examples/htcexample/generate_test_data.py --count 10000 - | gzip | gsutil cp - gs://${GOOGLE_CLOUD_PROJECT}-data/test_data.jsonl.gz
-gsutil ls -lh gs://${GOOGLE_CLOUD_PROJECT}-data/test_data.jsonl.gz
+examples/htcexample/generate_test_data.py --count 10000 - | gzip | gcloud storage cp - gs://${GOOGLE_CLOUD_PROJECT}-data/test_data.jsonl.gz
+gcloud storage ls --long --readable-sizes gs://${GOOGLE_CLOUD_PROJECT}-data/test_data.jsonl.gz
 ```

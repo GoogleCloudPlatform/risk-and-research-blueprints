@@ -2,31 +2,31 @@
 #    uv pip compile requirements.in
 cachetools==5.5.2
     # via google-auth
-certifi==2025.4.26
+certifi==2025.11.12
     # via requests
-charset-normalizer==3.4.2
+charset-normalizer==3.4.4
     # via requests
-google-api-core==2.24.2
+google-api-core==2.29.0
     # via google-cloud-parallelstore
-google-auth==2.40.1
+google-auth==2.47.0
     # via
     #   google-api-core
     #   google-cloud-parallelstore
-google-cloud-parallelstore==0.2.14
+google-cloud-parallelstore==0.4.0
     # via -r requirements.in
-googleapis-common-protos==1.70.0
+googleapis-common-protos==1.72.0
     # via
     #   google-api-core
     #   grpcio-status
-grpcio==1.71.0
+grpcio==1.76.0
     # via
     #   google-api-core
     #   grpcio-status
-grpcio-status==1.71.0
+grpcio-status==1.76.0
     # via google-api-core
-idna==3.10
+idna==3.11
     # via requests
-proto-plus==1.26.1
+proto-plus==1.27.0
     # via
     #   google-api-core
     #   google-cloud-parallelstore

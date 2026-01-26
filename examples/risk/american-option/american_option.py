@@ -137,7 +137,6 @@ def quantlib_run(req: PricingRequest) -> PricingResponse:
             ql.BlackVolTermStructureHandle(volatility["surface"]),
         )
 
-        results = []
         option.setPricingEngine(ql.BaroneAdesiWhaleyApproximationEngine(process))
         results.append(option.NPV())
 

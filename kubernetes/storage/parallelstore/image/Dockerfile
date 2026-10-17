@@ -101,7 +101,7 @@ RUN go build -a -ldflags "-linkmode external -extldflags -static" -o /usr/local/
 
 
 # Build stage for DAOS
-FROM debian:12-slim AS build
+FROM debian:13-slim AS build
 RUN apt-get update && \
     apt-get install -y \
     curl gnupg2 libpci3 apt-transport-https dirmngr gettext-base && \
